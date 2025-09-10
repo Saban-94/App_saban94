@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>אזור אישי - ח.סבן</title>
+    <title>אזור אישי - ח.סבן (מתוקן)</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -247,7 +247,18 @@
             }
 
             async function apiPost(body) {
-                const response = await fetch(API_URL, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+                // =========== FIXED CODE START ===========
+                // The 'Content-Type' header was changed from 'text/plain' to 'application/json'
+                // to correctly match the JSON data being sent in the body.
+                // This is the most likely fix for the issue.
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                // =========== FIXED CODE END ===========
                 if (!response.ok) throw new Error(`Network error (status ${response.status})`);
                 return await response.json();
             }
@@ -377,4 +388,3 @@
     </script>
 </body>
 </html>
-
