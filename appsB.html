@@ -25,58 +25,89 @@
         html, body { height: 100%; overflow: hidden; background-color: var(--bg); }
         body { font-family: 'Assistant', sans-serif; color: var(--text-dark); display: flex; flex-direction: column; overscroll-behavior-y: contain; }
         .app-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background-color: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .header-profile { display: flex; align-items: center; gap: 10px; }
         .header-profile img { width: 32px; height: 32px; border-radius: 50%; }
         .header-profile-name { font-weight: 700; font-size: 16px; }
-        .header-time { text-align: center; font-weight: 600; }
-        .header-time .date { font-size: 12px; color: var(--text-muted); }
-        .header-status { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
         .online-dot { width: 10px; height: 10px; background-color: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
-        .app-container { flex-grow: 1; overflow-y: auto; position: relative; -webkit-overflow-scrolling: touch; }
-        .page { padding: 20px 15px 120px 15px; display: none; }
-        .page.active { display: block; animation: fadeIn 0.5s ease-out; }
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background-color: var(--card); display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); border-top: 1px solid var(--border); z-index: 1000; }
-        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.2s ease-in-out; }
+        .app-container { flex-grow: 1; overflow: hidden; position: relative; }
+        .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; padding: 20px 15px 120px 15px; -webkit-overflow-scrolling: touch; background-color: var(--bg); visibility: hidden; opacity: 0; transform: translateX(100%); transition: transform 0.3s ease, opacity 0.3s ease; }
+        .page.active { visibility: visible; opacity: 1; transform: translateX(0); }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background-color: var(--card); display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 14px; }
         .nav-btn.active { color: var(--brand); }
         .nav-btn svg { width: 28px; height: 28px; }
-        .card { background-color: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); }
+        .card { background-color: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); animation: fadeIn 0.5s ease-out forwards; }
         .page-title { font-size: 28px; font-weight: 700; margin-bottom: 20px; }
-        .btn { background: var(--brand); color: white; border: none; padding: 14px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 16px; width: 100%; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn { background: var(--brand); color: white; border: none; padding: 14px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 16px; width: 100%; }
         .fab-container { position: fixed; bottom: 100px; left: 20px; z-index: 1000; }
         .fab { width: 60px; height: 60px; border-radius: 50%; background-color: var(--brand); color: white; border: none; box-shadow: 0 8px 20px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content { background-color: white; padding: 25px; border-radius: var(--radius); width: 90%; max-width: 500px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; }
     </style>
 </head>
 <body>
     <header class="app-header">
-        <div class="header-profile">
+        <div style="display: flex; align-items: center; gap: 10px;">
             <img src="https://img.icons8.com/?size=100&id=7WwZau6gMj6x&format=png&color=000000" alt="Profile">
-            <span class="header-profile-name" id="client-name-header">...</span>
+            <span id="client-name-header">...</span>
         </div>
-        <div class="header-time">
+        <div style="text-align: center; font-weight: 600;">
             <div id="clock"></div>
-            <div class="date" id="date"></div>
+            <div id="date" style="font-size: 12px; color: var(--text-muted);"></div>
         </div>
-        <div class="header-status">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
             <span>אונליין</span>
             <div class="online-dot"></div>
         </div>
     </header>
 
     <main class="app-container" id="app-container">
-        <!-- Page: Home -->
         <div id="page-home" class="page active">
             <h1 class="page-title" id="greeting"></h1>
-             <div class="card" id="notification-prompt-card" style="display: none;">
+            <div class="card" id="notification-prompt-card" style="display: none;">
                 <h2 style="font-size: 18px; margin-bottom: 10px;">🔔 קבל עדכונים בזמן אמת</h2>
                 <p style="color: var(--text-light); margin-bottom: 15px;">אשר קבלת התראות כדי לקבל עדכונים על ההזמנות שלך ישירות לנייד.</p>
                 <button class="btn" id="enable-notifications-btn">אשר קבלת התראות</button>
             </div>
-            <!-- Other page content will be rendered here by JS -->
+            <div id="eta-card-container"></div>
+            <div id="active-orders-container"></div>
+            <div id="no-active-orders" class="card" style="display: none; text-align: center;">
+                <p style="font-size: 18px; font-weight: 600;">אין לך כרגע הזמנות פעילות.</p>
+            </div>
         </div>
-        <!-- Other pages will be dynamically controlled by JS -->
-        <div id="page-containers" class="page"></div>
-        <div id="page-history" class="page"></div>
-        <div id="page-chat" class="page"></div>
+        <div id="page-containers" class="page">
+             <h1 class="page-title">המכולות שלי</h1>
+            <div id="containers-list"></div>
+        </div>
+        <div id="page-history" class="page">
+            <h1 class="page-title">היסטוריית הזמנות</h1>
+             <div class="card">
+                <div style="margin-bottom: 20px;"><canvas id="historyChart"></canvas></div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                        <thead><tr><th style="padding: 10px; border-bottom: 1px solid var(--border); text-align: right;">תעודה</th><th style="padding: 10px; border-bottom: 1px solid var(--border); text-align: right;">תאריך</th><th style="padding: 10px; border-bottom: 1px solid var(--border); text-align: right;">פעולה</th><th style="padding: 10px; border-bottom: 1px solid var(--border); text-align: right;">כתובת</th></tr></thead>
+                        <tbody id="history-table-body"></tbody>
+                    </table>
+                </div>
+             </div>
+        </div>
+        <div id="page-chat" class="page">
+             <h1 class="page-title">צור קשר</h1>
+            <div class="card">
+                <p style="font-weight: 600; margin-bottom: 10px;">בחר הודעה מהירה:</p>
+                <div id="chat-templates" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;"></div>
+                 <form id="chat-form">
+                     <div class="form-group">
+                        <label for="chat-message">או כתוב הודעה חופשית:</label>
+                        <textarea id="chat-message" required style="height: 80px;"></textarea>
+                    </div>
+                    <button type="submit" class="btn">שלח הודעה</button>
+                 </form>
+            </div>
+        </div>
     </main>
 
     <nav class="bottom-nav">
@@ -85,7 +116,7 @@
             <span>דף הבית</span>
         </a>
         <a href="#" class="nav-btn" data-page="page-containers">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45-.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg>
             <span>המכולות שלי</span>
         </a>
         <a href="#" class="nav-btn" data-page="page-history">
@@ -98,20 +129,19 @@
         </a>
     </nav>
     
-    <div class="fab-container" id="fab-container">
+    <div class="fab-container" id="fab-container" style="display: none;">
         <!-- FAB actions will be populated by JS -->
         <button class="fab" id="fab">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
         </button>
     </div>
     
-    <!-- Modals and other dynamic elements will be handled by JS -->
+    <div id="modal-container" class="modal-overlay"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // ========== 1. CONFIGURATION & STATE ==========
-            const API_URL = "https://script.google.com/macros/s/AKfycbzR-udDz38BylrphOWQpdezpLdFBh9LqjYPtjFO0boK-xhiad1y6McWc8Vy4EthOud6/exec";
-            
+            // ========== 1. CONFIG & STATE ==========
+            const API_URL = "https://script.google.com/macros/s/AKfycbwYHK7dBScSbgKo9Xifgr6HigFurxkivF0s6KPwjyoBYZkAU1YV2lMKKY3YiXJkVulR/exec";
             const firebaseConfig = {
                 apiKey: "AIzaSyDy3k1AoEKeuCKjmFxefn9fapeqv2Le1_w",
                 authDomain: "hsaban94-cc777.firebaseapp.com",
@@ -120,55 +150,50 @@
                 messagingSenderId: "299206369469",
                 appId: "1:299206369469:web:7527baa329def3a29457d4",
             };
-
             let clientState = { id: null, name: null, orders: [], addresses: new Set(), historyChart: null };
 
             // ========== 2. DOM ELEMENTS ==========
-            const clientNameHeader = document.getElementById('client-name-header');
-            const clockDiv = document.getElementById('clock');
-            const dateDiv = document.getElementById('date');
-            const notificationPromptCard = document.getElementById('notification-prompt-card');
-            const enableNotificationsBtn = document.getElementById('enable-notifications-btn');
-            const pages = document.querySelectorAll('.page');
-            const navButtons = document.querySelectorAll('.nav-btn');
+            const dom = {
+                clientNameHeader: document.getElementById('client-name-header'),
+                clock: document.getElementById('clock'),
+                date: document.getElementById('date'),
+                notificationCard: document.getElementById('notification-prompt-card'),
+                enableNotificationsBtn: document.getElementById('enable-notifications-btn'),
+                pages: document.querySelectorAll('.page'),
+                navButtons: document.querySelectorAll('.nav-btn'),
+                greeting: document.getElementById('greeting'),
+                etaCardContainer: document.getElementById('eta-card-container'),
+                activeOrdersContainer: document.getElementById('active-orders-container'),
+                noActiveOrders: document.getElementById('no-active-orders'),
+                containersList: document.getElementById('containers-list'),
+                historyChartCanvas: document.getElementById('historyChart'),
+                historyTableBody: document.getElementById('history-table-body'),
+                chatTemplates: document.getElementById('chat-templates'),
+                chatForm: document.getElementById('chat-form'),
+                fabContainer: document.getElementById('fab-container'),
+                modalContainer: document.getElementById('modal-container')
+            };
 
             // ========== 3. CORE APP LOGIC ==========
-
             function initApp() {
-                // Initialize Firebase and Service Worker first
                 initFirebasePush();
-
                 setupEventListeners();
                 updateClock();
                 setInterval(updateClock, 1000);
-
                 const storedClientId = localStorage.getItem('saban_client_id');
-                if (storedClientId) {
-                    loadClientData(storedClientId);
-                } else {
-                    promptForClientId();
-                }
-                setInterval(() => loadClientData(clientState.id, true), 60000); // Auto-refresh
+                if (storedClientId) loadClientData(storedClientId);
+                else promptForClientId();
+                setInterval(() => loadClientData(clientState.id, true), 60000);
             }
 
             async function loadClientData(clientId, isRefresh = false) {
                 if (!clientId) return;
                 try {
                     const data = await apiPost({ action: 'getClientData', identifier: clientId });
-                    if (data.status === 'error' || !data.clientName) {
-                        throw new Error(data.message || "Client not found");
-                    }
-                    clientState = { 
-                        id: data.clientId, 
-                        name: data.clientName, 
-                        orders: data.orders || [], 
-                        addresses: new Set(data.orders.map(o => o['כתובת']).filter(Boolean)), 
-                        historyChart: clientState.historyChart 
-                    };
+                    if (data.status === 'error' || !data.clientName) throw new Error(data.message || "Client not found");
+                    clientState = { id: data.clientId, name: data.clientName, orders: data.orders || [], addresses: new Set(data.orders.map(o => o['כתובת']).filter(Boolean)), historyChart: clientState.historyChart };
                     localStorage.setItem('saban_client_id', data.clientId);
-                    renderHeaderAndGreeting();
-                    // Simplified: Render content for the currently active page
-                    navigateTo('page-home'); 
+                    renderAllPages();
                 } catch (error) {
                     console.error("Failed to load client data:", error);
                     localStorage.removeItem('saban_client_id');
@@ -176,63 +201,46 @@
                     promptForClientId();
                 }
             }
-            
-            async function apiPost(body) { 
-                const response = await fetch(API_URL, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
-                    body: JSON.stringify(body) 
-                }); 
-                if (!response.ok) throw new Error(`Network error (status ${response.status})`); 
-                return await response.json(); 
+
+            async function apiPost(body) {
+                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+                if (!response.ok) throw new Error(`Network error (status ${response.status})`);
+                return await response.json();
             }
 
             function promptForClientId() {
                 const identifier = prompt("שלום! אנא הזן מספר לקוח או טלפון כדי להתחבר:");
-                if (identifier && identifier.trim() !== '') {
-                    loadClientData(identifier.trim());
-                } else {
-                    document.body.innerHTML = `<div style="padding: 20px; text-align: center;"><h1>נדרש מספר לקוח או טלפון. אנא רענן ונסה שוב.</h1></div>`;
-                }
+                if (identifier && identifier.trim() !== '') loadClientData(identifier.trim());
+                else document.body.innerHTML = `<div style="padding: 20px; text-align: center;"><h1>נדרש מספר לקוח או טלפון.</h1></div>`;
+            }
+             function parseDate(dateString) {
+                if (!dateString) return null;
+                const d = new Date(dateString);
+                return isNaN(d.getTime()) ? null : d;
             }
 
             // ========== 4. NOTIFICATIONS LOGIC ==========
-            
             function initFirebasePush() {
                 try {
                     if ('serviceWorker' in navigator && typeof firebase !== 'undefined' && firebaseConfig.apiKey) {
-                        // FIX: Register service worker explicitly.
-                        // Make sure 'firebase-messaging-sw.js' is in the SAME directory as this HTML file.
                         navigator.serviceWorker.register('firebase-messaging-sw.js')
                             .then((registration) => {
                                 console.log('Service Worker registered successfully.');
-                                if (!firebase.apps.length) {
-                                    firebase.initializeApp(firebaseConfig);
-                                }
+                                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                                 const messaging = firebase.messaging();
-                                
-                                // Listen for incoming messages when the app is in the foreground
                                 messaging.onMessage((payload) => {
                                     console.log('Message received. ', payload);
                                     alert(`התראה חדשה: ${payload.notification.title}\n${payload.notification.body}`);
                                 });
-
-                                // Check notification permission status
                                 if (Notification.permission === 'granted') {
-                                    notificationPromptCard.style.display = 'none';
+                                    dom.notificationCard.style.display = 'none';
                                     retrieveToken(messaging);
                                 } else if (Notification.permission !== 'denied') {
-                                    notificationPromptCard.style.display = 'block';
+                                    dom.notificationCard.style.display = 'block';
                                 }
-                            }).catch((err) => {
-                                console.error('Service Worker registration failed: ', err);
-                            });
-                    } else {
-                         console.warn("Firebase or Service Worker not supported/configured.");
+                            }).catch((err) => console.error('Service Worker registration failed: ', err));
                     }
-                } catch(e) {
-                    console.error("Firebase initialization failed:", e);
-                }
+                } catch (e) { console.error("Firebase initialization failed:", e); }
             }
 
             async function requestNotificationPermission() {
@@ -240,93 +248,136 @@
                     const messaging = firebase.messaging();
                     await messaging.requestPermission();
                     alert('אישור התקבל! כעת תוכל לקבל עדכונים.');
-                    notificationPromptCard.style.display = 'none';
+                    dom.notificationCard.style.display = 'none';
                     retrieveToken(messaging);
                 } catch (error) {
                     console.error('Unable to get permission to notify.', error);
                     alert('אישור נדחה. ניתן לאפשר התראות בהגדרות הדפדפן.');
-                    notificationPromptCard.style.display = 'none';
+                    dom.notificationCard.style.display = 'none';
                 }
             }
 
             async function retrieveToken(messaging) {
                 try {
-                    // NOTE: You MUST generate this key in your Firebase project console
-                    // under Project Settings > Cloud Messaging > Web configuration.
-                    const VAPID_KEY = "BD74H8MAwIVd-5-yJe9DS652Bl332JUnY-tW6CpSGFo-aFf2m1iX52YQcxpWJ4sV61s3mSwqGn83nHihHIoQ1TM"; 
+                    const VAPID_KEY = "BD74H8MAwIVd-5-yJe9DS652Bl332JUnY-tW6CpSGFo-aFf2m1iX52YQcxpWJ4sV61s3mSwqGn83nHihHIoQ1TM"; // Replace with your actual VAPID key
                     const currentToken = await messaging.getToken({ vapidKey: VAPID_KEY });
-                    if (currentToken) {
-                        console.log('Client FCM Token:', currentToken);
-                        sendTokenToServer(currentToken);
-                    } else {
-                        console.log('No registration token available. Request permission to generate one.');
-                    }
-                } catch (err) {
-                    console.error('An error occurred while retrieving token. ', err);
-                }
+                    if (currentToken) sendTokenToServer(currentToken);
+                    else console.log('No registration token available.');
+                } catch (err) { console.error('An error occurred while retrieving token. ', err); }
             }
 
             async function sendTokenToServer(token) {
                 const storedToken = localStorage.getItem('fcm_token');
-                if (token === storedToken && clientState.id) return; // No need to resend if token and client are the same
-                if (!clientState.id) return; // Wait until client ID is loaded
-
+                if (token === storedToken && clientState.id) return;
+                if (!clientState.id) return;
                 try {
                     await apiPost({ action: 'saveClientToken', clientId: clientState.id, token: token });
                     localStorage.setItem('fcm_token', token);
                     console.log("Token sent to server successfully.");
-                } catch (error) {
-                    console.error("Error sending token to server:", error);
-                }
+                } catch (error) { console.error("Error sending token to server:", error); }
             }
 
-            // ========== 5. UI RENDERING & EVENT HANDLERS ==========
-            
+            // ========== 5. UI RENDERING & EVENTS ==========
             function setupEventListeners() {
-                navButtons.forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        navigateTo(btn.dataset.page);
-                    });
-                });
-                enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
+                dom.navButtons.forEach(btn => btn.addEventListener('click', (e) => { e.preventDefault(); navigateTo(btn.dataset.page); }));
+                dom.enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
             }
-            
-            function navigateTo(pageId) {
-                pages.forEach(p => p.classList.remove('active'));
-                const nextPage = document.getElementById(pageId);
-                if (nextPage) nextPage.classList.add('active');
-                
-                navButtons.forEach(b => b.classList.remove('active'));
-                const nextButton = document.querySelector(`.nav-btn[data-page="${pageId}"]`);
-                if(nextButton) nextButton.classList.add('active');
 
-                // Render content for the new page
-                // This is a simplified example; you would have specific render functions
-                // renderHomePage(), renderContainersPage(), etc.
-                nextPage.innerHTML = `<h1 class="page-title">${nextButton.textContent.trim()}</h1><div class="card"><p>תוכן דף ${nextButton.textContent.trim()}.</p></div>`;
-                if(pageId === 'page-home') renderHeaderAndGreeting();
+            function renderAllPages() {
+                renderHeaderAndGreeting();
+                renderHomePage();
+                renderContainersPage();
+                renderHistoryPage();
+                renderChatPage();
+                dom.fabContainer.style.display = 'block';
+            }
+
+            function navigateTo(pageId) {
+                dom.pages.forEach(p => p.classList.remove('active'));
+                document.getElementById(pageId)?.classList.add('active');
+                dom.navButtons.forEach(b => b.classList.remove('active'));
+                document.querySelector(`.nav-btn[data-page="${pageId}"]`)?.classList.add('active');
             }
 
             function updateClock() {
                 const now = new Date();
-                clockDiv.textContent = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-                dateDiv.textContent = now.toLocaleDateString('he-IL', { weekday: 'long', day: '2-digit', month: '2-digit' });
+                dom.clock.textContent = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+                dom.date.textContent = now.toLocaleDateString('he-IL', { weekday: 'long', day: '2-digit', month: '2-digit' });
             }
 
             function renderHeaderAndGreeting() {
-                clientNameHeader.textContent = clientState.name;
+                if(!clientState.name) return;
+                dom.clientNameHeader.textContent = clientState.name;
                 const hour = new Date().getHours();
-                let greeting = "ברוך הבא,";
-                if (hour >= 5 && hour < 12) greeting = "בוקר טוב,";
-                else if (hour >= 12 && hour < 18) greeting = "צהריים טובים,";
-                else greeting = "ערב טוב,";
-                document.getElementById('greeting').textContent = `${greeting} ${clientState.name.split(' ')[0]}`;
+                let greeting = (hour >= 5 && hour < 12) ? "בוקר טוב," : (hour >= 12 && hour < 18) ? "צהריים טובים," : "ערב טוב,";
+                dom.greeting.textContent = `${greeting} ${clientState.name.split(' ')[0]}`;
             }
 
+            function renderHomePage() {
+                const activeOrders = clientState.orders.filter(o => o['סטטוס'] !== 'סגור');
+                if (activeOrders.length === 0) {
+                    dom.noActiveOrders.style.display = 'block';
+                    dom.etaCardContainer.style.display = 'none';
+                    dom.activeOrdersContainer.innerHTML = '';
+                } else {
+                    dom.noActiveOrders.style.display = 'none';
+                    dom.etaCardContainer.style.display = 'block';
+                    const mainOrder = activeOrders[0];
+                    dom.activeOrdersContainer.innerHTML = `<div class="card"><h2 style="font-size: 18px;">ההזמנה הפעילה שלך</h2><p>${mainOrder['סוג מכולה'] || 'מכולה'} בכתובת: <strong>${mainOrder['כתובת']}</strong></p></div>`;
+                    const eta = parseDate(mainOrder['זמן הגעה משוער']);
+                    const driver = mainOrder['שם נהג'];
+                    let etaHTML = `<div class="card"><div style="font-size: 14px; color: var(--text-muted);">צפי הגעה</div><div style="font-size: 18px; font-weight: 700;">טרם עודכן</div></div>`;
+                    if (eta || driver) {
+                         etaHTML = `<div class="card" style="background: linear-gradient(135deg, #e6f7ff, #e0f2f1);"><div style="font-size: 14px; color: var(--brand);">${driver ? `הנהג ${driver} בדרך` : 'צפי הגעה'}</div><div style="font-size: 18px; font-weight: 700;">${eta ? eta.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) : mainOrder['זמן הגעה משוער']}</div></div>`;
+                    }
+                    dom.etaCardContainer.innerHTML = etaHTML;
+                }
+            }
+             function renderContainersPage() {
+                dom.containersList.innerHTML = '';
+                const activeOrders = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && o['מכולה ירדה']);
+                if (activeOrders.length === 0) {
+                    dom.containersList.innerHTML = `<div class="card" style="text-align: center;"><p>אין לך מכולות פעילות כרגע.</p></div>`;
+                    return;
+                }
+                activeOrders.forEach(order => {
+                    const startDate = parseDate(order['תאריך הזמנה']);
+                    const endDate = parseDate(order['תאריך סיום צפוי']);
+                    if (!startDate || !endDate) return;
+                    const totalDuration = (endDate - startDate) / (1000 * 3600 * 24);
+                    const elapsedDuration = (new Date() - startDate) / (1000 * 3600 * 24);
+                    let progress = totalDuration > 0 ? Math.min(100, (elapsedDuration / totalDuration) * 100) : 0;
+                    dom.containersList.innerHTML += `<div class="card"><h3>מכולה ${order['מכולה ירדה']}</h3><p>${order['כתובת']}</p><div style="display:flex; justify-content: space-between; font-size: 14px;"><span>${startDate.toLocaleDateString('he-IL')}</span><span>${endDate.toLocaleDateString('he-IL')}</span></div><div style="width: 100%; height: 12px; background-color: #e0e0e0; border-radius: 6px; overflow: hidden;"><div style="height: 100%; width: ${progress}%; background: var(--success);"></div></div></div>`;
+                });
+            }
+
+            function renderHistoryPage() {
+                dom.historyTableBody.innerHTML = '';
+                clientState.orders.forEach(order => {
+                    const row = `<tr><td style="padding: 8px;">${order['מספר תעודה'] || ''}</td><td style="padding: 8px;">${parseDate(order['תאריך הזמנה']).toLocaleDateString('he-IL')}</td><td style="padding: 8px;">${order['סוג פעולה'] || 'הורדה'}</td><td style="padding: 8px;">${order['כתובת'] || ''}</td></tr>`;
+                    dom.historyTableBody.innerHTML += row;
+                });
+                if(clientState.historyChart) clientState.historyChart.destroy();
+                const monthlyData = clientState.orders.reduce((acc, order) => {
+                    const date = parseDate(order['תאריך הזמנה']);
+                    if(date) {
+                       const month = date.toLocaleDateString('he-IL', { year: '2-digit', month: 'short' });
+                       acc[month] = (acc[month] || 0) + 1;
+                    }
+                    return acc;
+                }, {});
+                clientState.historyChart = new Chart(dom.historyChartCanvas, { type: 'bar', data: { labels: Object.keys(monthlyData), datasets: [{ label: 'כמות הזמנות', data: Object.values(monthlyData), backgroundColor: 'var(--brand)', borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+            }
+
+            function renderChatPage() {
+                const CHAT_TEMPLATES = ["המכולה מלאה, אשמח לתאם פינוי.", "צריך להחליף את המכולה במכולה ריקה.", "מה צפי ההגעה של הנהג?", "תודה רבה על השירות המהיר!"];
+                dom.chatTemplates.innerHTML = CHAT_TEMPLATES.map(t => `<button class="template-btn" style="background-color: #f8faff; border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: right;">${t}</button>`).join('');
+            }
+            
             // ========== 6. START APP ==========
             initApp();
         });
     </script>
 </body>
 </html>
+
