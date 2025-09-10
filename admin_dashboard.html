@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חדר בקרה - ניהול CRM</title>
+    <link rel="stylesheet" href="admin.styles.css"> 
+    <link rel="icon" href="https://img.icons8.com/?size=100&id=9fZ3EWahbXyH&format=png&color=000000">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="header-icon"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                חדר בקרה למנהל
+            </h1>
+            <p>שליחת התראות וניהול בקשות לקוחות</p>
+        </header>
+        
+        <main class="dashboard">
+            <section class="card clients-card">
+                <div class="card-header">
+                    <h2>לקוחות פעילים</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>מס' לקוח</th>
+                                <th>שם לקוח</th>
+                                <th>כתובת</th>
+                                <th>ימים בשטח</th>
+                                <th>פעולה</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clients-table-body">
+                           <tr id="clients-loader" class="placeholder-row"><td colspan="5">טוען לקוחות...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card requests-card">
+                 <div class="card-header">
+                    <h2>יומן בקשות אחרונות</h2>
+                </div>
+                <ul id="requests-log" class="requests-log">
+                    <li id="requests-loader" class="placeholder-row">טוען בקשות...</li>
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for sending notification -->
+    <div id="notification-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="modal-close-btn" class="modal-close">&times;</button>
+            <h3>שליחת התראה ללקוח</h3>
+            <p><strong>אל:</strong> <span id="modal-client-name"></span></p>
+            <form id="notification-form">
+                <input type="hidden" id="modal-client-id">
+                 <div class="form-group">
+                    <label for="notification-template">בחר תבנית הודעה (אופציונלי)</label>
+                    <select id="notification-template">
+                        <!-- Options will be loaded here by JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="notification-title">כותרת ההתראה</label>
+                    <input type="text" id="notification-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="notification-body">תוכן ההודעה</label>
+                    <textarea id="notification-body" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn primary">שלח עכשיו</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="admin.app.js"></script>
+</body>
+</html>
