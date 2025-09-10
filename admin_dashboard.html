@@ -291,11 +291,18 @@
         // --- 2. CORE LOGIC ---
         
         /**
-         * Fetches data from a specific API endpoint using GET.
+         * Fetches data from a specific API endpoint using POST.
          * @param {string} action - The action to perform (e.g., 'getAllClients').
          */
         async function fetchData(action) {
-            const response = await fetch(`${API_URL}?action=${action}`);
+            // FIX: Using POST instead of GET to avoid potential CORS/redirect issues with Apps Script.
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: action })
+            });
+
             if (!response.ok) {
                 throw new Error(`שגיאת רשת (${response.status}) בפעולה: ${action}`);
             }
@@ -306,8 +313,9 @@
             return data;
         }
 
+
         /**
-         * Fetches all dashboard data from the backend using multiple GET calls.
+         * Fetches all dashboard data from the backend using multiple calls.
          */
         async function loadDashboardData() {
             try {
@@ -318,8 +326,8 @@
                 ]);
                 
                 // Process and render clients data
-                // NOTE: Using active clients for both sections as a workaround
                 if (clientsData && clientsData.clients) {
+                    // NOTE: Using active clients for both sections for now.
                     const onlineUsers = clientsData.clients.map(c => ({...c, isOnline: true, lastSeen: 'פעיל כעת' }));
                     renderOnlineUsers(onlineUsers);
                     renderActiveClients(clientsData.clients);
