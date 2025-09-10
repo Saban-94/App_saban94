@@ -6,7 +6,7 @@
 
 // --- 1. CONFIGURATION & SETUP ---
 // ⭐ FIX: Updated with the new deployment URL from the user.
-const API_URL = 'https://script.google.com/macros/s/AKfycbw7eJ5au7NlrKZBsSyJAMEcIuU4ipJ02vuVBPHDU4yM7IUSSEhZF1XfrtaS535Qnceo/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxkRH_B7lv4jsR2PCyn_KXL7sheLomsGBURESpT1YLgbtpuCsmgx1jxqOLNPWZwPdt8/exec';
 
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyBV_2JwCLtow5F6C7463NmfP2py5W-fj5I",
