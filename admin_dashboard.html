@@ -4,11 +4,173 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>חדר בקרה - ניהול CRM</title>
-    <link rel="stylesheet" href="admin.styles.css"> 
     <link rel="icon" href="https://img.icons8.com/?size=100&id=9fZ3EWahbXyH&format=png&color=000000">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- 1. CSS Variables (Design Tokens) --- */
+        :root {
+            --primary: #0b72b9; /* A professional blue */
+            --primary-light: #e6f7ff;
+            --primary-dark: #0056b3;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --bg-light: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --radius: 12px;
+            --shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+            --font-main: 'Assistant', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        /* --- 2. General & Layout Styling --- */
+        * { box-sizing: border-box; }
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 25px;
+            color: var(--text-color);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 25px; }
+        header h1 {
+            color: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 2.2rem;
+            margin: 0;
+        }
+        header p { color: var(--text-muted); font-size: 1.1rem; margin-top: 5px; }
+        .dashboard { display: grid; grid-template-columns: 2.5fr 1fr; gap: 25px; align-items: flex-start; }
+
+        /* --- 3. NEW Online Users Bar --- */
+        .online-users-container {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px 25px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+        .online-users-container h2 { margin: 0 0 15px; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .online-users-list {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-x: auto;
+            padding-bottom: 15px; /* For scrollbar */
+        }
+        .online-user { text-align: center; flex-shrink: 0; }
+        .avatar-container {
+            position: relative;
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 8px;
+            cursor: pointer;
+        }
+        .avatar { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--border-color); object-fit: cover; }
+        .avatar-container:hover .avatar { border-color: var(--primary); }
+        .status-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        .status-dot.online { background-color: var(--success); }
+        .status-dot.offline { background-color: var(--secondary); }
+        .user-info .user-name { font-weight: 600; display: block; }
+        .user-info .user-id { font-size: 0.85rem; color: var(--text-muted); }
+
+        .user-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .user-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        .avatar-container:hover .user-tooltip { display: block; }
+        .tooltip-status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 5px; }
+
+        /* --- 4. Component Styling (Existing & Enhanced) --- */
+        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+        .card-header { border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .card-header h2 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .table-responsive { overflow-x: auto; }
+        .clients-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 0.95rem; }
+        .clients-table th, .clients-table td { padding: 14px 15px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .clients-table th { font-weight: 700; background-color: var(--light); color: var(--primary); }
+        .clients-table tbody tr:hover { background-color: var(--primary-light); }
+        
+        .btn { border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s ease-in-out; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; font-family: var(--font-main); }
+        .btn.primary { background-color: var(--primary); color: white; }
+        .btn.primary:hover { background-color: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3); }
+
+        .requests-log { list-style-type: none; padding: 0; margin: 0; max-height: 520px; overflow-y: auto; }
+        .requests-log li { padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; transition: background-color 0.2s; }
+        .requests-log li:hover { background-color: var(--light); }
+        .requests-log li:last-child { border-bottom: none; }
+        .requests-log .icon { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; }
+        .requests-log .icon.החלפה { background-color: var(--warning); }
+        .requests-log .icon.העלאה, .requests-log .icon.הורדה { background-color: var(--info); }
+        .requests-log .icon.הודעת { background-color: var(--secondary); }
+        .requests-log .content strong { display: block; color: var(--text-color); }
+        .requests-log .content .meta { font-size: 0.85rem; color: var(--text-muted); }
+
+        .placeholder-row td, .placeholder-item { color: var(--text-muted); text-align: center; font-style: italic; padding: 30px !important; }
+
+        /* --- 5. Modal Styling --- */
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+        .modal-overlay.show { display: flex; opacity: 1; }
+        .modal-content { background-color: white; padding: 30px; border-radius: var(--radius); width: 90%; max-width: 500px; position: relative; transform: scale(0.95); transition: transform 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+        .modal-close { position: absolute; top: 15px; left: 20px; background: none; border: none; font-size: 1.8rem; cursor: pointer; color: var(--secondary); transition: transform 0.2s; }
+        .modal-close:hover { transform: scale(1.1); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--primary); }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-size: 1rem; font-family: var(--font-main); transition: box-shadow 0.2s, border-color 0.2s; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+
+        /* --- 6. Responsive Design --- */
+        @media (max-width: 992px) {
+            .dashboard { grid-template-columns: 1fr; }
+            body { padding: 15px; }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -19,11 +181,25 @@
             </h1>
             <p>שליחת התראות וניהול בקשות לקוחות</p>
         </header>
+
+        <!-- NEW: Online Users Bar -->
+        <section class="online-users-container">
+            <h2>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                לקוחות מחוברים
+            </h2>
+            <ul id="online-users-list" class="online-users-list">
+                 <li id="online-users-loader" class="placeholder-item" style="width: 100%;">טוען רשימת לקוחות...</li>
+            </ul>
+        </section>
         
         <main class="dashboard">
             <section class="card clients-card">
                 <div class="card-header">
-                    <h2>לקוחות פעילים</h2>
+                    <h2>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                        לקוחות עם מכולות בשטח
+                    </h2>
                 </div>
                 <div class="table-responsive">
                     <table class="clients-table">
@@ -37,7 +213,7 @@
                             </tr>
                         </thead>
                         <tbody id="clients-table-body">
-                           <tr id="clients-loader" class="placeholder-row"><td colspan="5">טוען לקוחות...</td></tr>
+                           <tr id="clients-loader"><td colspan="5" class="placeholder-row">טוען לקוחות...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -45,10 +221,13 @@
 
             <section class="card requests-card">
                  <div class="card-header">
-                    <h2>יומן בקשות אחרונות</h2>
+                    <h2>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        יומן בקשות אחרונות
+                    </h2>
                 </div>
                 <ul id="requests-log" class="requests-log">
-                    <li id="requests-loader" class="placeholder-row">טוען בקשות...</li>
+                    <li id="requests-loader" class="placeholder-item">טוען בקשות...</li>
                 </ul>
             </section>
         </main>
@@ -64,9 +243,7 @@
                 <input type="hidden" id="modal-client-id">
                  <div class="form-group">
                     <label for="notification-template">בחר תבנית הודעה (אופציונלי)</label>
-                    <select id="notification-template">
-                        <!-- Options will be loaded here by JavaScript -->
-                    </select>
+                    <select id="notification-template"></select>
                 </div>
                 <div class="form-group">
                     <label for="notification-title">כותרת ההתראה</label>
@@ -81,6 +258,264 @@
         </div>
     </div>
 
-    <script src="admin.app.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 1. CONFIGURATION & DOM ELEMENTS ---
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwfRTTD1IyvbJPNuIzsip4kN-QX--hkRbGv7cHgZckODkZfOzPXaJQegwMXvSethv0/exec';
+        
+        const dom = {
+            onlineUsersList: document.getElementById('online-users-list'),
+            onlineUsersLoader: document.getElementById('online-users-loader'),
+            clientsTableBody: document.getElementById('clients-table-body'),
+            requestsLog: document.getElementById('requests-log'),
+            clientsLoader: document.getElementById('clients-loader'),
+            requestsLoader: document.getElementById('requests-loader'),
+            modal: document.getElementById('notification-modal'),
+            modalCloseBtn: document.getElementById('modal-close-btn'),
+            notificationForm: document.getElementById('notification-form'),
+            modalClientId: document.getElementById('modal-client-id'),
+            modalClientName: document.getElementById('modal-client-name'),
+            templateSelect: document.getElementById('notification-template'),
+            notificationTitleInput: document.getElementById('notification-title'),
+            notificationBodyInput: document.getElementById('notification-body'),
+        };
+
+        const notificationTemplates = [
+            { title: "בחר תבנית...", subject: "", text: "" },
+            { title: "עדכון לגבי הזמנה", subject: "עדכון לגבי הזמנתך", text: "שלום {{clientName}}, יש לנו עדכון בנוגע להזמנתך." },
+            { title: "נהג בדרך", subject: "הנהג בדרך אליך!", text: "שלום {{clientName}}, הנהג בדרך אליך. צפי הגעה משוער: {{eta}}" },
+            { title: "תזכורת לפינוי", subject: "תזכורת לפינוי מכולה", text: "שלום {{clientName}}, תזכורת קטנה שהמכולה צפויה להתפנות בקרוב." },
+            { title: "חשבונית חדשה", subject: "חשבונית חדשה הופקה עבורך", text: "שלום {{clientName}}, הופקה עבורך חשבונית חדשה במערכת." }
+        ];
+
+        // --- 2. CORE LOGIC ---
+        
+        /**
+         * Fetches all dashboard data from the backend in a single call.
+         */
+        async function loadDashboardData() {
+            try {
+                // Using POST to potentially send more complex requests in the future
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'getDashboardData' })
+                });
+                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(`API error: ${data.error}`);
+                
+                // Render all components with the fetched data
+                renderOnlineUsers(data.allClients || []);
+                renderActiveClients(data.activeClients || []);
+                renderRecentRequests(data.recentRequests || []);
+
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                alert(`שגיאה קריטית בטעינת הנתונים: ${error.message}`);
+                dom.onlineUsersLoader.textContent = 'טעינת הנתונים נכשלה';
+                dom.clientsLoader.innerHTML = `<td colspan="5" class="placeholder-row">טעינת הנתונים נכשלה</td>`;
+                dom.requestsLoader.textContent = 'טעינת הנתונים נכשלה';
+            }
+        }
+
+        // --- 3. UI RENDERING FUNCTIONS ---
+
+        /**
+         * Renders the list of "online" clients at the top.
+         * @param {Array} clients - Array of all client objects.
+         */
+        function renderOnlineUsers(clients) {
+            if (dom.onlineUsersLoader) dom.onlineUsersLoader.style.display = 'none';
+            dom.onlineUsersList.innerHTML = '';
+
+            if (clients.length === 0) {
+                dom.onlineUsersList.innerHTML = '<li class="placeholder-item" style="width: 100%;">לא נמצאו לקוחות במערכת.</li>';
+                return;
+            }
+
+            clients.forEach(client => {
+                const isOnline = client.isOnline;
+                const lastSeenText = isOnline ? 'מחובר/ת כעת' : (client.lastSeen ? `נראה לאחרונה: ${client.lastSeen}` : 'לא ידוע');
+                const statusText = isOnline ? 'מחובר' : 'לא מחובר';
+
+                const userElement = document.createElement('li');
+                userElement.className = 'online-user';
+                userElement.innerHTML = `
+                    <div class="avatar-container">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(client.clientName)}&background=0b72b9&color=fff&size=128" alt="${client.clientName}" class="avatar">
+                        <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
+                        <div class="user-tooltip">
+                            <p><strong>סטטוס:</strong> 
+                               <span class="tooltip-status-indicator" style="background-color: ${isOnline ? 'var(--success)' : 'var(--secondary)'};"></span>
+                               ${statusText}
+                            </p>
+                            <p>${lastSeenText}</p>
+                        </div>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name">${client.clientName}</span>
+                        <span class="user-id">#${client.clientId}</span>
+                    </div>`;
+                dom.onlineUsersList.appendChild(userElement);
+            });
+        }
+        
+        /**
+         * Renders the table of clients with active containers.
+         * @param {Array} clients - Array of active client objects.
+         */
+        function renderActiveClients(clients) {
+            if (dom.clientsLoader) dom.clientsLoader.style.display = 'none';
+            dom.clientsTableBody.innerHTML = '';
+            if (clients.length === 0) {
+                dom.clientsTableBody.innerHTML = '<tr><td colspan="5" class="placeholder-row">לא נמצאו לקוחות עם מכולות פעילות.</td></tr>';
+                return;
+            }
+
+            clients.forEach(client => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${client.clientId}</td>
+                    <td>${client.clientName}</td>
+                    <td>${client.address}</td>
+                    <td>${client.daysOnSite}</td>
+                    <td>
+                        <button class="btn primary notification-btn" data-id="${client.clientId}" data-name="${client.clientName}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
+                            שלח התראה
+                        </button>
+                    </td>`;
+                dom.clientsTableBody.appendChild(row);
+            });
+        }
+
+        /**
+         * Renders the log of recent client requests.
+         * @param {Array} requests - Array of request objects.
+         */
+        function renderRecentRequests(requests) {
+            if (dom.requestsLoader) dom.requestsLoader.style.display = 'none';
+            dom.requestsLog.innerHTML = '';
+            if (requests.length === 0) {
+                dom.requestsLog.innerHTML = '<li class="placeholder-item">אין בקשות חדשות.</li>';
+                return;
+            }
+
+            requests.forEach(req => {
+                const item = document.createElement('li');
+                const requestTypeClean = req.type.split(" ")[0];
+                const iconMap = {
+                    'החלפה': '🔄', 'העלאה': '🔼', 'הורדה': '🔽', 'הודעת': '💬'
+                };
+                item.innerHTML = `
+                    <div class="icon ${requestTypeClean}">
+                        ${iconMap[requestTypeClean] || '❔'}
+                    </div>
+                    <div class="content">
+                        <strong>בקשת ${req.type}</strong>
+                        <span>${req.details || ''}</span>
+                        <div class="meta">${req.clientName} • ${new Date(req.timestamp).toLocaleString('he-IL')}</div>
+                    </div>`;
+                dom.requestsLog.appendChild(item);
+            });
+        }
+
+        // --- 4. MODAL & NOTIFICATION LOGIC ---
+        
+        function openNotificationModal(clientId, clientName) {
+            dom.modalClientId.value = clientId;
+            dom.modalClientName.textContent = clientName;
+            
+            dom.templateSelect.innerHTML = '';
+            notificationTemplates.forEach((t, i) => {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = t.title;
+                dom.templateSelect.appendChild(option);
+            });
+
+            dom.notificationForm.reset();
+            dom.modal.classList.add('show');
+        }
+
+        function fillTemplate() {
+            const selectedIndex = dom.templateSelect.value;
+            const template = notificationTemplates[selectedIndex];
+            if (!template || selectedIndex == 0) return;
+
+            const clientName = dom.modalClientName.textContent;
+            let body = template.text.replace('{{clientName}}', clientName);
+            
+            dom.notificationTitleInput.value = template.subject;
+            dom.notificationBodyInput.value = body;
+        }
+
+        async function handleSendNotification(event) {
+            event.preventDefault();
+            const clientId = dom.modalClientId.value;
+            const title = dom.notificationTitleInput.value;
+            const body = dom.notificationBodyInput.value;
+            
+            const submitBtn = dom.notificationForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'שולח...';
+            submitBtn.disabled = true;
+
+            try {
+                const result = await postData('sendAdminNotification', { clientId, title, body });
+                if (result) {
+                    alert('ההתראה נשלחה בהצלחה!');
+                    dom.modal.classList.remove('show');
+                }
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function postData(action, payload) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action, ...payload })
+                });
+                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
+                const result = await response.json();
+                if (result.status !== 'success' && result.status !== 'ok' ) throw new Error(result.message || 'Unknown API error');
+                return result;
+            } catch (error) {
+                console.error(`Failed to post ${action}:`, error);
+                alert(`שליחת הנתונים נכשלה: ${error.message}`);
+                return null;
+            }
+        }
+
+        // --- 5. EVENT LISTENERS ---
+
+        function initializeEventListeners() {
+            // Event delegation for dynamically added notification buttons
+            dom.clientsTableBody.addEventListener('click', (event) => {
+                const button = event.target.closest('.notification-btn');
+                if (button && button.dataset.id) {
+                    openNotificationModal(button.dataset.id, button.dataset.name);
+                }
+            });
+
+            // Modal listeners
+            dom.modalCloseBtn.addEventListener('click', () => dom.modal.classList.remove('show'));
+            dom.notificationForm.addEventListener('submit', handleSendNotification);
+            dom.templateSelect.addEventListener('change', fillTemplate);
+            
+            // Auto-refresh data every 45 seconds
+            setInterval(loadDashboardData, 45000);
+        }
+
+        // --- 6. APP START ---
+        loadDashboardData();
+        initializeEventListeners();
+    });
+    </script>
 </body>
 </html>
