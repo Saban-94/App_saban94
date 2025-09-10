@@ -7,7 +7,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // ========== STATE & CONFIG ==========
-    const API_URL = "https://script.google.com/macros/s/AKfycbwfRTTD1IyvbJPNuIzsip4kN-QX--hkRbGv7cHgZckODkZfOzPXaJQegwDMXvSethv0/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzR-udDz38BylrphOWQpdezpLdFBh9LqjYPtjFO0boK-xhiad1y6McWc8Vy4EthOud6/exec";
     
     const CHAT_TEMPLATES = [
         "המכולה מלאה, אשמח לתאם פינוי.",
