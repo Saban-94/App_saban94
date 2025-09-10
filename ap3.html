@@ -174,11 +174,11 @@
                      <h4 style="border-bottom: 2px solid var(--brand); padding-bottom: 5px; margin: 20px 0 10px 0;">סימולציות שימוש</h4>
                      <p style="font-size: 14px; margin-bottom: 5px;"><strong>כרטיס מכולה פעיל:</strong></p>
                      <!-- צלם כאן את דף הבית או דף "המכולות שלי" והדבק את הלינק לתמונה -->
-                     <img src="https://via.placeholder.com/300x150.png?text=צילום+מסך+של+כרטיס+מכולה" alt="Container Card Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
+                     <img src="https://placehold.co/600x300/e2e8f0/1a202c?text=צילום+מסך+של+כרטיס+מכולה" alt="Container Card Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
                      <p style="font-size: 12px; color: var(--text-muted);">לחיצה על הכרטיס תרחיב אותו ותציג מפה ופרטים נוספים. הכפתורים מאפשרים לבצע פעולות מהירות.</p>
                      <p style="font-size: 14px; margin-top: 15px; margin-bottom: 5px;"><strong>שליחת הודעה מהירה:</strong></p>
                       <!-- צלם כאן את דף הצ'אט והדבק את הלינק לתמונה -->
-                     <img src="https://via.placeholder.com/300x100.png?text=צילום+מסך+של+דף+הצ'אט" alt="Chat Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
+                     <img src="https://placehold.co/600x200/e2e8f0/1a202c?text=צילום+מסך+של+דף+הצ'אט" alt="Chat Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
                      <p style="font-size: 12px; color: var(--text-muted);">בחר קטגוריה, לחץ על ההודעה הרצויה ושלח.</p>
                 </div>
             </div>
@@ -316,17 +316,29 @@
 
             // ========== 4. EVENT LISTENERS ==========
             function setupEventListeners() {
-                dom.navButtons.forEach(btn => btn.addEventListener('click', () => navigateTo(btn.dataset.page)));
+                // Use event delegation for dynamic content
+                document.body.addEventListener('click', (e) => {
+                    const navBtn = e.target.closest('.nav-btn');
+                    if (navBtn) {
+                        navigateTo(navBtn.dataset.page);
+                        return;
+                    }
+
+                    const containerCard = e.target.closest('.container-card');
+                    if (containerCard) {
+                        handleContainerCardClick(e);
+                        return;
+                    }
+                });
+                
                 dom.enablePermissionsBtn.addEventListener('click', requestCorePermissions);
                 dom.chatTemplates.addEventListener('click', handleChatTemplateClick);
                 dom.chatForm.addEventListener('submit', handleChatFormSubmit);
-                dom.activeOrdersContainer.addEventListener('click', handleContainerCardClick);
-                dom.containersList.addEventListener('click', handleContainerCardClick);
                 dom.historyTableBody.addEventListener('click', handleHistoryRowClick);
                 dom.helpFab.addEventListener('click', () => dom.helpModal.classList.add('show'));
                 dom.helpCloseBtn.addEventListener('click', () => dom.helpModal.classList.remove('show'));
                 dom.newOrderBtn.addEventListener('click', () => openOrderModal('הזמנה חדשה'));
-                dom.profileContainer.addEventListener('click', (e) => { if(e.target.id !== 'logout-btn') dom.profileContainer.classList.toggle('active'); });
+                dom.profileContainer.addEventListener('click', (e) => { if(!e.target.closest('#logout-btn')) dom.profileContainer.classList.toggle('active'); });
                 dom.logoutBtn.addEventListener('click', () => { localStorage.removeItem('saban_client_id'); window.location.reload(); });
                 dom.resetHistoryFilterBtn.addEventListener('click', () => { renderHistoryTable(clientState.orders); dom.resetHistoryFilterBtn.style.display = 'none'; });
             }
@@ -337,7 +349,8 @@
                     const chatMessageInput = document.getElementById('chat-message');
                     chatMessageInput.value = button.textContent;
                     chatMessageInput.focus();
-                    dom.appContainer.querySelector('#page-chat').scrollTo({ top: dom.appContainer.querySelector('#page-chat').scrollHeight, behavior: 'smooth' });
+                    const chatPage = document.getElementById('page-chat');
+                    chatPage.scrollTo({ top: chatPage.scrollHeight, behavior: 'smooth' });
                 }
             }
             
@@ -359,14 +372,14 @@
                 if (!card) return;
                 const actionButton = e.target.closest('.btn');
                 if (actionButton && actionButton.dataset.action) {
-                     e.stopPropagation(); // Prevent card from toggling when a button is clicked
+                     e.stopPropagation();
                      const order = clientState.orders.find(o => o['מספר תעודה'] == actionButton.dataset.orderId);
                      if (order) openOrderModal(actionButton.dataset.action, order);
                 } else {
                     card.classList.toggle('expanded');
                     const mapCanvas = card.querySelector('.map-canvas');
-                    if(card.classList.contains('expanded') && mapCanvas) {
-                        const order = clientState.orders.find(o => o['מספר תעודה'] == card.dataset.orderId);
+                    const order = clientState.orders.find(o => o['מספר תעודה'] == card.dataset.orderId);
+                    if(card.classList.contains('expanded') && mapCanvas && order) {
                         drawLocationMap(mapCanvas, order['כתובת']);
                     }
                 }
@@ -470,9 +483,12 @@
 
             function navigateTo(pageId) {
                 dom.pages.forEach(p => p.classList.remove('active'));
-                document.getElementById(pageId)?.classList.add('active');
+                const page = document.getElementById(pageId);
+                if(page) page.classList.add('active');
+                
                 dom.navButtons.forEach(b => b.classList.remove('active'));
-                document.querySelector(`.nav-btn[data-page="${pageId}"]`)?.classList.add('active');
+                const navBtn = document.querySelector(`.nav-btn[data-page="${pageId}"]`);
+                if(navBtn) navBtn.classList.add('active');
             }
             function updateClock() {
                 const now = new Date();
@@ -483,7 +499,6 @@
             function renderHeaderAndGreeting() {
                 if(!clientState.name) return;
                 dom.clientNameHeader.textContent = clientState.name;
-                // הדבק כאן לינק לתמונת פרופיל מהגיליון שלך
                 dom.profileAvatar.src = clientState.avatar || `https://placehold.co/80x80/0b72b9/FFFFFF?text=${clientState.name.charAt(0)}`;
                 const hour = new Date().getHours();
                 let greeting = (hour < 12) ? "בוקר טוב," : (hour < 18) ? "צהריים טובים," : "ערב טוב,";
