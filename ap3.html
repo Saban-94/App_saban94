@@ -489,7 +489,7 @@
             function renderHeaderAndGreeting() {
                 if(!clientState.name) return;
                 dom.clientNameHeader.textContent = clientState.name;
-                dom.profileAvatar.src = clientState.avatar || `https://placehold.co/80x80/0b72b9/FFFFFF?text=${clientState.name.charAt(0)}`;
+                dom.profileAvatar.src = clientState.avatar || `https://img.icons8.com/?size=100&id=0VCYUytpI5xi&format=png&color=000000/80x80/0b72b9/FFFFFF?text=${clientState.name.charAt(0)}`;
                 const hour = new Date().getHours();
                 let greeting = (hour < 12) ? "בוקר טוב," : (hour < 18) ? "צהריים טובים," : "ערב טוב,";
                 dom.greeting.textContent = `${greeting} ${clientState.name.split(' ')[0]}`;
