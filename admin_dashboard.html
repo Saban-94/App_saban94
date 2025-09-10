@@ -261,7 +261,7 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // --- 1. CONFIGURATION & DOM ELEMENTS ---
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwfRTTD1IyvbJPNuIzsip4kN-QX--hkRbGv7cHgZckODkZfOzPXaJQegwMXvSethv0/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwYHK7dBScSbgKo9Xifgr6HigFurxkivF0s6KPwjyoBYZkAU1YV2lMKKY3YiXJkVulR/exec';
         
         const dom = {
             onlineUsersList: document.getElementById('online-users-list'),
@@ -291,39 +291,50 @@
         // --- 2. CORE LOGIC ---
         
         /**
-         * Fetches data from a specific API endpoint using POST.
+         * Fetches data from a specific API endpoint using GET, with robust error handling.
          * @param {string} action - The action to perform (e.g., 'getAllClients').
          */
         async function fetchData(action) {
-            // FIX: Using POST instead of GET to avoid potential CORS/redirect issues with Apps Script.
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                mode: 'cors',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: action })
-            });
+            const url = `${API_URL}?action=${action}&cachebust=${new Date().getTime()}`;
+            try {
+                const response = await fetch(url);
 
-            if (!response.ok) {
-                throw new Error(`שגיאת רשת (${response.status}) בפעולה: ${action}`);
+                if (!response.ok) {
+                    throw new Error(`שגיאת רשת (${response.status}) בפעולה: ${action}`);
+                }
+                
+                // First, get the response as text to check if it's valid JSON
+                const text = await response.text();
+                
+                try {
+                    // Then, try to parse it
+                    const data = JSON.parse(text);
+                    if (data.error) {
+                        throw new Error(`שגיאת שרת בפעולה ${action}: ${data.error}`);
+                    }
+                    return data;
+                } catch (jsonError) {
+                    // If parsing fails, it means the server returned something unexpected (like an HTML error page)
+                    console.error("Failed to parse JSON from server. Response text:", text);
+                    throw new Error("התקבלה תגובה לא תקינה מהשרת.");
+                }
+
+            } catch (fetchError) {
+                // This catches network errors or the errors thrown above
+                console.error(`Fetch operation failed for action "${action}":`, fetchError);
+                throw fetchError; // Re-throw to be caught by the calling function
             }
-            const data = await response.json();
-            if (data.error) {
-                throw new Error(`שגיאת שרת בפעולה ${action}: ${data.error}`);
-            }
-            return data;
         }
 
 
         /**
-         * Fetches all dashboard data from the backend using multiple calls.
+         * Fetches all dashboard data from the backend using multiple sequential calls.
          */
         async function loadDashboardData() {
             try {
-                // Fetch all data in parallel to improve loading speed
-                const [clientsData, requestsData] = await Promise.all([
-                    fetchData('getAllClients'),
-                    fetchData('getRecentRequests')
-                ]);
+                // Fetching data sequentially to avoid potential concurrency limits on the Google Apps Script server.
+                const clientsData = await fetchData('getAllClients');
+                const requestsData = await fetchData('getRecentRequests');
                 
                 // Process and render clients data
                 if (clientsData && clientsData.clients) {
