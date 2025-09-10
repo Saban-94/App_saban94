@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>אזור אישי - ח.סבן</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <style>
+        :root {
+            --brand: #0b72b9; --accent: #ff9f1c; --bg: #f0f2f5; --card: #ffffff;
+            --text-dark: #1a202c; --text-light: #4a5568; --text-muted: #718096;
+            --border: #e2e8f0; --success: #38a169; --warning: #dd6b20; --danger: #e53e3e;
+            --radius: 16px; --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes checkmark { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; overflow: hidden; background-color: var(--bg); }
+        body { font-family: 'Assistant', sans-serif; color: var(--text-dark); display: flex; flex-direction: column; overscroll-behavior-y: contain; }
+        .app-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background-color: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .profile-container { position: relative; cursor: pointer; }
+        .profile-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border); transition: transform 0.2s; }
+        .online-indicator { position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background-color: var(--success); border-radius: 50%; border: 2px solid white; }
+        .logout-popup { position: absolute; top: 50px; left: 0; background: var(--card); border-radius: 10px; box-shadow: var(--shadow); padding: 5px; opacity: 0; visibility: hidden; transition: opacity 0.2s, transform 0.2s; transform: translateY(10px); }
+        .profile-container.active .logout-popup { opacity: 1; visibility: visible; transform: translateY(0); }
+        .profile-container.active .profile-avatar { transform: scale(1.1); }
+        .logout-btn { background: none; border: none; padding: 8px 12px; font-weight: 600; color: var(--danger); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .app-container { flex-grow: 1; overflow: hidden; position: relative; }
+        .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; padding: 20px 15px 120px 15px; -webkit-overflow-scrolling: touch; background-color: var(--bg); visibility: hidden; opacity: 0; transform: translateX(100%); transition: transform 0.3s ease, opacity 0.3s ease; }
+        .page.active { visibility: visible; opacity: 1; transform: translateX(0); }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background-color: var(--card); display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 14px; border: none; background: transparent; cursor: pointer;}
+        .nav-btn.active { color: var(--brand); }
+        .nav-btn svg { width: 28px; height: 28px; pointer-events: none; }
+        .card { background-color: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); animation: fadeIn 0.5s ease-out forwards; }
+        .page-title { font-size: 28px; font-weight: 700; margin-bottom: 20px; }
+        .btn { background: var(--brand); color: white; border: none; padding: 12px 18px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: background-color 0.2s; }
+        .btn.secondary { background-color: var(--bg); color: var(--text-dark); border: 1px solid var(--border); }
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content { background-color: white; padding: 25px; border-radius: var(--radius); width: 90%; max-width: 500px; animation: fadeIn 0.3s; }
+        .details-row { display: none; }
+        .details-row.show { display: table-row; }
+        .map-canvas { border-radius: 10px; border: 1px solid var(--border); }
+        .container-card-details { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease-out; padding: 0 20px;}
+        .container-card.expanded .container-card-details { max-height: 500px; padding: 20px 0 10px 0; }
+        .container-card .progress-bar { width: 100%; height: 8px; background-color: var(--border); border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .container-card .progress-bar-inner { height: 100%; background-color: var(--success); border-radius: 4px; transition: width 0.5s; }
+        .container-card.overdue { border-color: var(--danger); animation: pulse 2s infinite; }
+        .container-card.overdue .progress-bar-inner { background-color: var(--danger); }
+        .help-fab { position: fixed; bottom: 100px; left: 20px; width: 50px; height: 50px; background-color: var(--accent); color: white; border-radius: 50%; border: none; font-size: 24px; font-weight: bold; box-shadow: var(--shadow); z-index: 1001; cursor: pointer; }
+        .help-modal { position: fixed; inset: 0; background: var(--bg); z-index: 3000; transform: translateY(100%); transition: transform 0.4s ease-out; display: flex; flex-direction: column;}
+        .help-modal.show { transform: translateY(0); }
+        .help-header { padding: 15px; text-align: center; position: relative; background: var(--card); }
+        .help-close { position: absolute; top: 10px; left: 15px; font-size: 24px; cursor: pointer; border: none; background: none;}
+        .help-content { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; }
+        .smartphone-mockup { width: 100%; max-width: 400px; aspect-ratio: 9/19.5; background: #1c1c1c; border-radius: 40px; padding: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .smartphone-screen { background: white; height: 100%; border-radius: 30px; padding: 20px; overflow-y: auto; text-align: right; }
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 4000; display: flex; flex-direction: column; gap: 10px; align-items: center;}
+        .toast { background-color: rgba(0,0,0,0.8); color: white; padding: 12px 20px; border-radius: 25px; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.2); opacity: 0; transform: translateY(-20px); transition: opacity 0.3s, transform 0.3s; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .chat-send-feedback { text-align: center; margin-top: 15px; max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+        .chat-send-feedback.show { max-height: 50px; }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header class="app-header">
+        <div id="profile-container" class="profile-container">
+            <img id="profile-avatar" src="https://placehold.co/80x80/EFEFEF/333333?text=👤" alt="Profile" class="profile-avatar">
+            <div class="online-indicator"></div>
+            <div class="logout-popup">
+                <button id="logout-btn" class="logout-btn">
+                     <!-- אייקון התנתקות -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+                    <span>התנתק</span>
+                </button>
+            </div>
+        </div>
+        <div style="text-align: center; font-weight: 600;">
+            <div id="clock"></div>
+            <div id="date" style="font-size: 12px; color: var(--text-muted);"></div>
+        </div>
+        <div id="client-name-header" style="font-weight: 700; font-size: 16px;">...</div>
+    </header>
+
+    <main class="app-container" id="app-container">
+        <div id="page-home" class="page active">
+             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <h1 class="page-title" id="greeting"></h1>
+                <button class="btn" id="new-order-btn" style="padding: 10px 15px; font-size: 14px; white-space: nowrap;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg> הזמן חדשה</button>
+            </div>
+            <div class="card" id="permission-prompt-card" style="display: none;">
+                <h2 style="font-size: 18px; margin-bottom: 10px;">🔔 שירות משופר עם התראות ומיקום</h2>
+                <p style="color: var(--text-light); margin-bottom: 15px;">אשר קבלת התראות ומיקום כדי שנוכל לעדכן אותך בזמן אמת ולשלוח נהגים למיקום המדויק.</p>
+                <button class="btn" id="enable-permissions-btn">אשר הרשאות</button>
+            </div>
+            <div id="eta-card-container"></div>
+            <div id="active-orders-container"></div>
+            <div id="no-active-orders" class="card" style="display: none; text-align: center;">
+                <p style="font-size: 18px; font-weight: 600;">אין לך כרגע הזמנות פעילות.</p>
+            </div>
+        </div>
+        <div id="page-containers" class="page">
+             <h1 class="page-title">המכולות שלי</h1>
+            <div id="containers-list"></div>
+        </div>
+        <div id="page-history" class="page">
+            <h1 class="page-title">היסטוריית הזמנות</h1>
+             <div class="card">
+                <div style="margin-bottom: 20px;"><canvas id="historyChart"></canvas></div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: right;">
+                        <thead><tr><th style="padding: 10px; border-bottom: 1px solid var(--border);">תעודה</th><th style="padding: 10px; border-bottom: 1px solid var(--border);">תאריך</th><th style="padding: 10px; border-bottom: 1px solid var(--border);">פעולה</th><th style="padding: 10px; border-bottom: 1px solid var(--border);">כתובת</th></tr></thead>
+                        <tbody id="history-table-body"></tbody>
+                    </table>
+                </div>
+             </div>
+        </div>
+        <div id="page-chat" class="page">
+             <h1 class="page-title">צור קשר</h1>
+            <div class="card">
+                <div id="chat-templates"></div>
+                 <form id="chat-form">
+                     <div class="form-group">
+                        <label for="chat-message">או כתוב הודעה חופשית:</label>
+                        <textarea id="chat-message" required style="height: 80px;"></textarea>
+                    </div>
+                    <button type="submit" class="btn">שלח הודעה</button>
+                 </form>
+                 <div class="chat-send-feedback" id="chat-send-feedback">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="animation: checkmark 0.5s ease-in-out;"><path d="M20 6 9 17l-5-5"></path></svg>
+                    <span>הודעתך נשלחה!</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-page="page-home"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span>דף הבית</span></button>
+        <button class="nav-btn" data-page="page-containers"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg><span>המכולות שלי</span></button>
+        <button class="nav-btn" data-page="page-history"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg><span>היסטוריה</span></button>
+        <button class="nav-btn" data-page="page-chat"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 15-3-3-3 3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"></path><path d="m3 9 3 3 3-3"></path></svg><span>צ'אט</span></button>
+    </nav>
+    
+    <button class="help-fab" id="help-fab">?</button>
+
+    <div id="help-modal" class="help-modal">
+        <div class="help-header">
+            <h2 style="margin:0;">מדריך למשתמש</h2>
+            <button id="help-close-btn" class="help-close">&times;</button>
+        </div>
+        <div class="help-content">
+            <div class="smartphone-mockup">
+                <div class="smartphone-screen">
+                    <h3 style="color: var(--brand); text-align: center; margin-bottom: 10px;">ברוכים הבאים לעידן החדש של ח.סבן!</h3>
+                    <p style="font-size: 15px; margin-bottom: 20px;">מתוך הבנת השינויים הטכנולוגיים וחשיבות הזמן והדיוק שלכם, הקמנו אפליקציה שתספק לכם מבט-על ויכולת לבצע הזמנות בצורה חלקה, מאובטחת ומהירה, ישירות מהנייד.</p>
+                    <h4 style="border-bottom: 2px solid var(--brand); padding-bottom: 5px; margin-bottom: 10px;">מה האפליקציה מאפשרת?</h4>
+                    <ul style="padding-right: 20px; font-size: 14px; list-style: '✔ ';">
+                        <li style="margin-bottom: 8px;"><strong>צפייה און-ליין:</strong> ראו את כל המכולות הפעילות שלכם, כולל התקדמות ימי השכירות.</li>
+                        <li style="margin-bottom: 8px;"><strong>התראות לנייד:</strong> קבלו עדכונים ממחלקת ההזמנות ישירות לטלפון שלכם.</li>
+                        <li style="margin-bottom: 8px;"><strong>פעולות מהירות:</strong> בקשו פינוי או החלפה של מכולה בלחיצת כפתור.</li>
+                        <li style="margin-bottom: 8px;"><strong>בקרוב:</strong> מעקב אחר מסלול הנהג וביצוע הזמנות של חומרי בנין!</li>
+                    </ul>
+                     <h4 style="border-bottom: 2px solid var(--brand); padding-bottom: 5px; margin: 20px 0 10px 0;">סימולציות שימוש</h4>
+                     <p style="font-size: 14px; margin-bottom: 5px;"><strong>כרטיס מכולה פעיל:</strong></p>
+                     <!-- הדבק כאן לינק לצילום מסך של כרטיס מכולה פעיל -->
+                     <img src="https://i.ibb.co/L5BKn0g/Card-Demo.png" alt="Container Card Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
+                     <p style="font-size: 12px; color: var(--text-muted);">לחיצה על הכרטיס תרחיב אותו ותציג מפה ופרטים נוספים. הכפתורים מאפשרים לבצע פעולות מהירות.</p>
+                     <p style="font-size: 14px; margin-top: 15px; margin-bottom: 5px;"><strong>שליחת הודעה מהירה:</strong></p>
+                      <!-- הדבק כאן לינק לצילום מסך של דף הצ'אט -->
+                     <img src="https://i.ibb.co/Y0yR9W2/Chat-Demo.png" alt="Chat Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
+                     <p style="font-size: 12px; color: var(--text-muted);">בחר קטגוריה, לחץ על ההודעה הרצויה ושלח.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal-container" class="modal-overlay"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ========== 1. CONFIG & STATE ==========
+            const API_URL = "https://script.google.com/macros/s/AKfycbwYHK7dBScSbgKo9Xifgr6HigFurxkivF0s6KPwjyoBYZkAU1YV2lMKKY3YiXJkVulR/exec";
+            const firebaseConfig = { apiKey: "AIzaSyDy3k1AoEKeuCKjmFxefn9fapeqv2Le1_w", authDomain: "hsaban94-cc777.firebaseapp.com", projectId: "hsaban94-cc777", storageBucket: "hsaban94-cc777.appspot.com", messagingSenderId: "299206369469", appId: "1:299206369469:web:7527baa329def3a29457d4" };
+            let clientState = { id: null, name: null, avatar: null, orders: [], addresses: new Set(), historyChart: null };
+            const dom = {
+                appContainer: document.getElementById('app-container'),
+                clientNameHeader: document.getElementById('client-name-header'),
+                profileContainer: document.getElementById('profile-container'),
+                profileAvatar: document.getElementById('profile-avatar'),
+                logoutBtn: document.getElementById('logout-btn'),
+                clock: document.getElementById('clock'), date: document.getElementById('date'),
+                permissionCard: document.getElementById('permission-prompt-card'),
+                enablePermissionsBtn: document.getElementById('enable-permissions-btn'),
+                pages: document.querySelectorAll('.page'), navButtons: document.querySelectorAll('.nav-btn'),
+                greeting: document.getElementById('greeting'), newOrderBtn: document.getElementById('new-order-btn'),
+                etaCardContainer: document.getElementById('eta-card-container'),
+                activeOrdersContainer: document.getElementById('active-orders-container'),
+                noActiveOrders: document.getElementById('no-active-orders'),
+                containersList: document.getElementById('containers-list'),
+                historyChartCanvas: document.getElementById('historyChart'),
+                historyTableBody: document.getElementById('history-table-body'),
+                chatTemplates: document.getElementById('chat-templates'), chatForm: document.getElementById('chat-form'),
+                modalContainer: document.getElementById('modal-container'),
+                helpFab: document.getElementById('help-fab'), helpModal: document.getElementById('help-modal'), helpCloseBtn: document.getElementById('help-close-btn'),
+                toastContainer: document.getElementById('toast-container')
+            };
+
+            // ========== 2. CORE APP LOGIC ==========
+            function initApp() {
+                initFirebasePush();
+                setupEventListeners();
+                updateClock();
+                setInterval(updateClock, 1000);
+                const storedClientId = localStorage.getItem('saban_client_id');
+                if (storedClientId) loadClientData(storedClientId);
+                else promptForClientId();
+                setInterval(() => loadClientData(clientState.id, true), 60000);
+            }
+
+            async function loadClientData(clientId, isRefresh = false) {
+                if (!clientId) return;
+                try {
+                    const data = await apiPost({ action: 'getClientData', identifier: clientId });
+                    if (data.status === 'error' || !data.clientName) throw new Error(data.message || "Client not found");
+                    clientState = { id: data.clientId, name: data.clientName, avatar: data.avatarUrl, orders: data.orders || [], addresses: new Set(data.orders.map(o => o['כתובת']).filter(Boolean)), historyChart: clientState.historyChart };
+                    localStorage.setItem('saban_client_id', data.clientId);
+                    if (!isRefresh) renderAllPages();
+                    else { renderHeaderAndGreeting(); renderHomePage(); renderContainersPage(); }
+                } catch (error) {
+                    console.error("Failed to load client data:", error);
+                    localStorage.removeItem('saban_client_id');
+                    showToast("שגיאה בטעינת נתוני לקוח. אנא רענן ונסה שוב.", 'error');
+                }
+            }
+
+            async function apiPost(body) {
+                const response = await fetch(API_URL, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+                if (!response.ok) throw new Error(`Network error (status ${response.status})`);
+                return await response.json();
+            }
+
+            function promptForClientId() {
+                const identifier = prompt("שלום! אנא הזן מספר לקוח או מספר טלפון כדי להתחבר:");
+                if (identifier && identifier.trim() !== '') loadClientData(identifier.trim());
+                else document.body.innerHTML = `<div style="padding: 20px; text-align: center;"><h1>נדרש מספר לקוח או טלפון.</h1></div>`;
+            }
+            
+            const parseDate = (d) => d ? new Date(d) : null;
+            const randomColor = () => `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`;
+
+            // ========== 3. PERMISSIONS & NOTIFICATIONS ==========
+            function initFirebasePush() { /* ... unchanged ... */ }
+            async function requestCorePermissions() { /* ... unchanged ... */ }
+            async function retrieveToken(messaging) { /* ... unchanged ... */ }
+            async function sendTokenToServer(token) { /* ... unchanged ... */ }
+
+            // ========== 4. EVENT LISTENERS ==========
+            function setupEventListeners() {
+                dom.navButtons.forEach(btn => btn.addEventListener('click', () => navigateTo(btn.dataset.page)));
+                dom.enablePermissionsBtn.addEventListener('click', requestCorePermissions);
+                dom.chatTemplates.addEventListener('click', handleChatTemplateClick);
+                dom.chatForm.addEventListener('submit', handleChatFormSubmit);
+                dom.activeOrdersContainer.addEventListener('click', handleContainerCardClick);
+                dom.containersList.addEventListener('click', handleContainerCardClick);
+                dom.historyTableBody.addEventListener('click', handleHistoryRowClick);
+                dom.helpFab.addEventListener('click', () => dom.helpModal.classList.add('show'));
+                dom.helpCloseBtn.addEventListener('click', () => dom.helpModal.classList.remove('show'));
+                dom.newOrderBtn.addEventListener('click', () => openOrderModal('הזמנה חדשה'));
+                dom.profileContainer.addEventListener('click', () => dom.profileContainer.classList.toggle('active'));
+                dom.logoutBtn.addEventListener('click', () => { localStorage.removeItem('saban_client_id'); window.location.reload(); });
+            }
+            
+            function handleChatTemplateClick(e) {
+                const button = e.target.closest('.template-btn');
+                if (button) {
+                    document.getElementById('chat-message').value = button.textContent;
+                    dom.appContainer.querySelector('#page-chat').scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }
+            }
+            
+            function handleChatFormSubmit(e) {
+                e.preventDefault();
+                const msgInput = document.getElementById('chat-message');
+                const msg = msgInput.value.trim();
+                if(msg) { 
+                    sendClientRequest('הודעת צאט', msg); 
+                    msgInput.value = ''; 
+                    const feedback = document.getElementById('chat-send-feedback');
+                    feedback.classList.add('show');
+                    setTimeout(() => feedback.classList.remove('show'), 2000);
+                }
+            }
+            
+            function handleContainerCardClick(e) {
+                const card = e.target.closest('.container-card');
+                if (!card) return;
+                const actionButton = e.target.closest('.btn');
+                if (actionButton && actionButton.dataset.action) {
+                     const order = clientState.orders.find(o => o['מספר תעודה'] == actionButton.dataset.orderId);
+                     if (order) openOrderModal(actionButton.dataset.action, order);
+                } else {
+                    card.classList.toggle('expanded');
+                    const mapCanvas = card.querySelector('.map-canvas');
+                    if(card.classList.contains('expanded') && mapCanvas) {
+                        const order = clientState.orders.find(o => o['מספר תעודה'] == card.dataset.orderId);
+                        drawLocationMap(mapCanvas, order['כתובת']);
+                    }
+                }
+            }
+            
+            function handleHistoryChartClick(event) {
+                const points = clientState.historyChart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+                if (points.length) {
+                    const index = points[0].index;
+                    const month = clientState.historyChart.data.labels[index];
+                    const filteredOrders = clientState.orders.filter(order => {
+                        const orderDate = parseDate(order['תאריך הזמנה']);
+                        return orderDate && orderDate.toLocaleDateString('he-IL', { year: '2-digit', month: 'short' }) === month;
+                    });
+                    renderHistoryTable(filteredOrders);
+                }
+            }
+
+             function handleHistoryRowClick(e) {
+                const row = e.target.closest('.history-data-row');
+                if (!row) return;
+                let detailsRow = row.nextElementSibling;
+                if (detailsRow && detailsRow.classList.contains('details-row')) {
+                    detailsRow.classList.toggle('show');
+                } else {
+                    const orderData = JSON.parse(row.dataset.order);
+                    const newDetailsRow = document.createElement('tr');
+                    newDetailsRow.className = 'details-row show';
+                    newDetailsRow.innerHTML = `<td colspan="4" style="padding: 15px;"><canvas class="map-canvas" width="300" height="150"></canvas></td>`;
+                    row.after(newDetailsRow);
+                    drawLocationMap(newDetailsRow.querySelector('.map-canvas'), orderData['כתובת']);
+                }
+            }
+            
+            async function sendClientRequest(requestType, details) {
+                try {
+                    const result = await apiPost({ action: 'clientRequest', clientId: clientState.id, clientName: clientState.name, requestType, details });
+                    if (result.status !== 'success') throw new Error(result.message);
+                } catch (error) { showToast(`שגיאה בשליחת הבקשה: ${error.message}`, 'error'); }
+            }
+            
+            function openOrderModal(actionType, order) { /* ... unchanged ... */ }
+
+            // ========== 5. UI RENDERING ==========
+            function renderAllPages() {
+                renderHeaderAndGreeting();
+                const activePage = document.querySelector('.nav-btn.active')?.dataset.page || 'page-home';
+                navigateTo(activePage);
+                renderHomePage();
+                renderContainersPage();
+                renderHistoryPage();
+                renderChatPage();
+            }
+
+            function navigateTo(pageId) { /* ... unchanged ... */ }
+            function updateClock() { /* ... unchanged ... */ }
+
+            function renderHeaderAndGreeting() {
+                if(!clientState.name) return;
+                dom.clientNameHeader.textContent = clientState.name;
+                dom.profileAvatar.src = clientState.avatar || `https://placehold.co/80x80/EFEFEF/333333?text=${clientState.name.charAt(0)}`;
+                const hour = new Date().getHours();
+                let greeting = (hour < 12) ? "בוקר טוב," : (hour < 18) ? "צהריים טובים," : "ערב טוב,";
+                dom.greeting.textContent = `${greeting} ${clientState.name.split(' ')[0]}`;
+            }
+
+            function renderHomePage() {
+                const activeOnSite = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && o['מכולה ירדה']);
+                dom.activeOrdersContainer.innerHTML = activeOnSite.length > 0 ? activeOnSite.map(createContainerCardHTML).join('') : '<p style="text-align:center; color: var(--text-muted);">אין כרגע מכולות בשטח.</p>';
+                
+                const upcomingOrders = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && !o['מכולה ירדה']);
+                if (upcomingOrders.length > 0) {
+                    dom.etaCardContainer.style.display = 'block';
+                    const mainOrder = upcomingOrders[0];
+                    const eta = parseDate(mainOrder['זמן הגעה משוער']);
+                    const driver = mainOrder['שם נהג'];
+                    let etaHTML = `<div class="card"><div>צפי הגעה</div><div style="font-weight: 700;">טרם עודכן</div></div>`;
+                    if (eta || driver) {
+                         etaHTML = `<div class="card" style="background: linear-gradient(135deg, #e6f7ff, #e0f2f1);"><div style="color: var(--brand);">${driver ? `הנהג ${driver} בדרך` : 'צפי הגעה'}</div><div style="font-weight: 700;">${eta ? eta.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) : mainOrder['זמן הגעה משוער']}</div></div>`;
+                    }
+                    dom.etaCardContainer.innerHTML = etaHTML;
+                } else {
+                    dom.etaCardContainer.style.display = 'none';
+                }
+
+                dom.noActiveOrders.style.display = activeOnSite.length === 0 && upcomingOrders.length === 0 ? 'block' : 'none';
+            }
+
+             function renderContainersPage() {
+                const activeOrders = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && o['מכולה ירדה']);
+                if (activeOrders.length === 0) {
+                    dom.containersList.innerHTML = `<div class="card" style="text-align: center;"><p>אין לך מכולות פעילות כרגע.</p></div>`;
+                    return;
+                }
+                dom.containersList.innerHTML = activeOrders.map(createContainerCardHTML).join('');
+            }
+            
+            function createContainerCardHTML(order) {
+                const startDate = parseDate(order['תאריך הזמנה']);
+                const endDate = parseDate(order['תאריך סיום צפוי']);
+                if (!startDate || !endDate) return '';
+                const totalMs = endDate - startDate;
+                const elapsedMs = new Date() - startDate;
+                const remainingMs = Math.max(0, endDate - new Date());
+                const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
+                const progress = totalMs > 0 ? Math.min(100, (elapsedMs / totalMs) * 100) : 0;
+                const isOverdue = new Date() > endDate;
+                
+                return `
+                <div class="card container-card ${isOverdue ? 'overdue' : ''}" data-order-id="${order['מספר תעודה']}">
+                    <div style="display:flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                         <div>
+                            <h3 style="font-size: 1.1rem; margin-bottom: 4px;">מכולה ${order['מכולה ירדה']}</h3>
+                            <p style="color: var(--text-light); font-size: 0.9rem;">${order['כתובת']}</p>
+                         </div>
+                         <div style="text-align: center;">
+                            <div style="font-weight: bold; font-size: 1.2rem;">${isOverdue ? '!' : remainingDays}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">${isOverdue ? 'בחריגה' : 'ימים נותרו'}</div>
+                         </div>
+                    </div>
+                    <div class="progress-bar"><div class="progress-bar-inner" style="width: ${progress}%;"></div></div>
+                    <div class="container-card-details">
+                         <div style="padding: 15px 0;"><canvas class="map-canvas" width="300" height="150"></canvas></div>
+                         <p><strong>תאריך התחלה:</strong> ${startDate.toLocaleDateString('he-IL')}</p>
+                         <p><strong>תאריך סיום צפוי:</strong> ${endDate.toLocaleDateString('he-IL')}</p>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button class="btn secondary" data-action="החלפה" data-order-id="${order['מספר תעודה']}" style="flex:1;">בקש החלפה</button>
+                            <button class="btn" data-action="פינוי" data-order-id="${order['מספר תעודה']}" style="flex:1;">בקש פינוי</button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            function renderHistoryPage() {
+                renderHistoryTable(clientState.orders);
+                if(clientState.historyChart) clientState.historyChart.destroy();
+                const monthlyData = clientState.orders.reduce((acc, order) => {
+                    const date = parseDate(order['תאריך הזמנה']);
+                    if(date) {
+                       const month = date.toLocaleDateString('he-IL', { year: '2-digit', month: 'short' });
+                       acc[month] = (acc[month] || 0) + 1;
+                    }
+                    return acc;
+                }, {});
+                
+                const labels = Object.keys(monthlyData);
+                const data = Object.values(monthlyData);
+                const backgroundColors = labels.map(() => randomColor());
+
+                clientState.historyChart = new Chart(dom.historyChartCanvas, { 
+                    type: 'bar', 
+                    data: { labels, datasets: [{ label: 'כמות הזמנות', data, backgroundColor: backgroundColors, borderRadius: 5 }] }, 
+                    options: { 
+                        responsive: true, 
+                        plugins: { legend: { display: false } },
+                        onClick: handleHistoryChartClick
+                    } 
+                });
+            }
+            
+            function renderHistoryTable(orders) {
+                dom.historyTableBody.innerHTML = '';
+                orders.forEach(order => {
+                    const row = document.createElement('tr');
+                    row.className = 'history-data-row';
+                    row.style.cursor = 'pointer';
+                    row.dataset.order = JSON.stringify(order);
+                    row.innerHTML = `<td style="padding: 12px;">${order['מספר תעודה'] || ''}</td><td>${parseDate(order['תאריך הזמנה'])?.toLocaleDateString('he-IL') || ''}</td><td>${order['סוג פעולה'] || ''}</td><td>${order['כתובת'] || ''}</td>`;
+                    dom.historyTableBody.appendChild(row);
+                });
+            }
+
+            function renderChatPage() {
+                const templates = {
+                    "שאלות נפוצות": ["מה צפי ההגעה של הנהג?", "האם ניתן להאריך את זמן השהייה?"],
+                    "בקשות פינוי": ["המכולה מלאה, אשמח לתאם פינוי.", "פינוי דחוף, נא צרו קשר."],
+                    "בקשות החלפה": ["צריך להחליף את המכולה במכולה ריקה.", "האם אפשר להחליף למכולה גדולה יותר?"],
+                    "שירות לקוחות": ["יש לי שאלה בנוגע לחיוב.", "תודה רבה על השירות המהיר!"],
+                    "עדכונים": ["עדכון כתובת לפינוי.", "הכל בסדר, רק לוודא שההזמנה התקבלה."]
+                };
+                let html = '';
+                for (const category in templates) {
+                    html += `<p style="font-weight: 600; margin-top: 15px; margin-bottom: 5px;">${category}</p>`;
+                    html += templates[category].map(t => `<button class="btn secondary template-btn">${t}</button>`).join('');
+                }
+                dom.chatTemplates.innerHTML = html;
+            }
+            
+            function drawLocationMap(canvas, address) { /* ... unchanged ... */ }
+            function showToast(message, type = 'info') { /* ... unchanged ... */ }
+            
+            // ========== 6. START APP ==========
+            initApp();
+        });
+    </script>
+</body>
+</html>
+
