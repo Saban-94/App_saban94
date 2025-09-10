@@ -79,11 +79,11 @@
 <body>
     <div id="toast-container"></div>
     <header class="app-header">
-        <div id="profile-container" class="profile-container">
-            <img id="profile-avatar" src="https://img.icons8.com/?size=100&id=KNxaH6cx0qhT&format=png&color=000000" alt="Profile" class="profile-avatar">
+        <div id="profile-container" class="profile-container" data-action="toggle-profile">
+            <img id="profile-avatar" src="https://placehold.co/80x80/EFEFEF/333333?text=👤" alt="Profile" class="profile-avatar">
             <div class="online-indicator"></div>
             <div class="logout-popup">
-                <button id="logout-btn" class="logout-btn">
+                <button data-action="logout" class="logout-btn">
                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
                     <span>התנתק</span>
                 </button>
@@ -150,10 +150,10 @@
     </main>
 
     <nav class="bottom-nav">
-        <button class="nav-btn active" data-page="page-home"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span>דף הבית</span></button>
-        <button class="nav-btn" data-page="page-containers"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45-.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg><span>המכולות שלי</span></button>
-        <button class="nav-btn" data-page="page-history"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg><span>היסטוריה</span></button>
-        <button class="nav-btn" data-page="page-chat"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 15-3-3-3 3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"></path><path d="m3 9 3 3 3-3"></path></svg><span>צ'אט</span></button>
+        <button class="nav-btn active" data-action="navigate" data-page="page-home"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span>דף הבית</span></button>
+        <button class="nav-btn" data-action="navigate" data-page="page-containers"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45-.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg><span>המכולות שלי</span></button>
+        <button class="nav-btn" data-action="navigate" data-page="page-history"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg><span>היסטוריה</span></button>
+        <button class="nav-btn" data-action="navigate" data-page="page-chat"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 15-3-3-3 3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"></path><path d="m3 9 3 3 3-3"></path></svg><span>צ'אט</span></button>
     </nav>
     
     <button class="help-fab" data-action="help-fab">?</button>
@@ -205,6 +205,7 @@
                 clock: document.getElementById('clock'), date: document.getElementById('date'),
                 permissionCard: document.getElementById('permission-prompt-card'),
                 pages: document.querySelectorAll('.page'),
+                navButtons: document.querySelectorAll('.nav-btn'),
                 greeting: document.getElementById('greeting'),
                 etaCardContainer: document.getElementById('eta-card-container'),
                 activeOrdersContainer: document.getElementById('active-orders-container'),
@@ -318,27 +319,31 @@
 
             function handleAppClick(e) {
                 const target = e.target;
-                const action = target.dataset.action || target.closest('[data-action]')?.dataset.action;
+                const actionElement = target.closest('[data-action]');
+                if (!actionElement) return;
+
+                const action = actionElement.dataset.action;
 
                 switch (action) {
-                    case 'navigate': navigateTo(target.closest('[data-page]').dataset.page); break;
+                    case 'navigate': navigateTo(actionElement.dataset.page); break;
                     case 'toggle-profile': dom.profileContainer.classList.toggle('active'); break;
                     case 'logout': localStorage.removeItem('saban_client_id'); window.location.reload(); break;
                     case 'new-order': openOrderModal('הזמנה חדשה'); break;
                     case 'enable-permissions': requestCorePermissions(); break;
-                    case 'reset-history-filter': renderHistoryTable(clientState.orders); target.style.display = 'none'; break;
+                    case 'reset-history-filter': renderHistoryTable(clientState.orders); actionElement.style.display = 'none'; break;
                     case 'help-fab': dom.helpModal.classList.add('show'); break;
                     case 'help-close': dom.helpModal.classList.remove('show'); break;
-                    case 'chat-template': handleChatTemplateClick(target); break;
-                    case 'toggle-container-details': handleContainerCardClick(e, target.closest('.container-card')); break;
+                    case 'chat-template': handleChatTemplateClick(actionElement); break;
+                    case 'toggle-container-details': handleContainerCardClick(e, actionElement.closest('.container-card')); break;
                     case 'request-swap':
-                    case 'request-pickup':
+                    case 'request-pickup': {
                         e.stopPropagation();
-                        const orderId = target.closest('[data-order-id]').dataset.orderId;
+                        const orderId = actionElement.dataset.orderId;
                         const order = clientState.orders.find(o => o['מספר תעודה'] == orderId);
                         if (order) openOrderModal(action === 'request-swap' ? 'החלפה' : 'פינוי', order);
                         break;
-                    case 'toggle-history-details': handleHistoryRowClick(target.closest('.history-data-row')); break;
+                    }
+                    case 'toggle-history-details': handleHistoryRowClick(actionElement.closest('.history-data-row')); break;
                     default:
                         if (!target.closest('#profile-container')) dom.profileContainer.classList.remove('active');
                 }
@@ -369,7 +374,7 @@
                 const mapContainer = card.querySelector('.map-container');
                 const order = clientState.orders.find(o => o['מספר תעודה'] == card.dataset.orderId);
                 if(card.classList.contains('expanded') && mapContainer && order) {
-                   setTimeout(() => renderLeafletMap(mapContainer, order['כתובת']), 50); // Delay for animation
+                   setTimeout(() => renderLeafletMap(mapContainer, order['כתובת']), 50);
                 }
             }
             
@@ -445,7 +450,7 @@
                     if(isNewOrder) {
                         const newAddress = document.getElementById('new-address').value.trim();
                         address = newAddress || document.getElementById('address-select').value;
-                        if (!address || address === 'new') { showToast('אנא בחר או הקלד כתובת.', 'error'); return; }
+                        if (!address || address === 'new' || address === '') { showToast('אנא בחר או הקלד כתובת.', 'error'); return; }
                         details = `כתובת: ${address}. הערות: ${notes || 'אין'}`;
                     } else {
                         details = `מכולה קיימת: ${order['מספר תעודה']}. כתובת: ${order['כתובת']}. הערות: ${notes || 'אין'}`;
@@ -471,7 +476,7 @@
                 const page = document.getElementById(pageId);
                 if(page) page.classList.add('active');
                 
-                dom.navButtons.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                 const navBtn = document.querySelector(`.nav-btn[data-page="${pageId}"]`);
                 if(navBtn) navBtn.classList.add('active');
             }
@@ -611,9 +616,7 @@
             }
             
             function renderLeafletMap(container, address) {
-                if (mapInstances[container.id]) {
-                    mapInstances[container.id].remove();
-                }
+                if (mapInstances[container.id]) mapInstances[container.id].remove();
                 container.innerHTML = 'טוען מפה...';
                 fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
                     .then(response => response.json())
@@ -622,9 +625,7 @@
                             const { lat, lon } = data[0];
                             container.innerHTML = '';
                             const map = L.map(container).setView([lat, lon], 15);
-                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                            }).addTo(map);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
                             L.marker([lat, lon]).addTo(map);
                             mapInstances[container.id] = map;
                         } else {
