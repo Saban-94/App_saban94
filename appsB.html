@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>אזור אישי - ח.סבן</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <style>
+        :root {
+            --brand: #0b72b9; --accent: #ff9f1c; --bg: #f0f2f5; --card: #ffffff;
+            --text-dark: #1a202c; --text-light: #4a5568; --text-muted: #718096;
+            --border: #e2e8f0; --success: #38a169; --warning: #dd6b20; --danger: #e53e3e;
+            --radius: 16px; --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; overflow: hidden; background-color: var(--bg); }
+        body { font-family: 'Assistant', sans-serif; color: var(--text-dark); display: flex; flex-direction: column; overscroll-behavior-y: contain; }
+        .app-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background-color: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .header-profile { display: flex; align-items: center; gap: 10px; }
+        .header-profile img { width: 32px; height: 32px; border-radius: 50%; }
+        .header-profile-name { font-weight: 700; font-size: 16px; }
+        .header-time { text-align: center; font-weight: 600; }
+        .header-time .date { font-size: 12px; color: var(--text-muted); }
+        .header-status { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
+        .online-dot { width: 10px; height: 10px; background-color: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+        .app-container { flex-grow: 1; overflow-y: auto; position: relative; -webkit-overflow-scrolling: touch; }
+        .page { padding: 20px 15px 120px 15px; display: none; }
+        .page.active { display: block; animation: fadeIn 0.5s ease-out; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background-color: var(--card); display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.2s ease-in-out; }
+        .nav-btn.active { color: var(--brand); }
+        .nav-btn svg { width: 28px; height: 28px; }
+        .card { background-color: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); }
+        .page-title { font-size: 28px; font-weight: 700; margin-bottom: 20px; }
+        .btn { background: var(--brand); color: white; border: none; padding: 14px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 16px; width: 100%; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .fab-container { position: fixed; bottom: 100px; left: 20px; z-index: 1000; }
+        .fab { width: 60px; height: 60px; border-radius: 50%; background-color: var(--brand); color: white; border: none; box-shadow: 0 8px 20px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-profile">
+            <img src="https://img.icons8.com/?size=100&id=7WwZau6gMj6x&format=png&color=000000" alt="Profile">
+            <span class="header-profile-name" id="client-name-header">...</span>
+        </div>
+        <div class="header-time">
+            <div id="clock"></div>
+            <div class="date" id="date"></div>
+        </div>
+        <div class="header-status">
+            <span>אונליין</span>
+            <div class="online-dot"></div>
+        </div>
+    </header>
+
+    <main class="app-container" id="app-container">
+        <!-- Page: Home -->
+        <div id="page-home" class="page active">
+            <h1 class="page-title" id="greeting"></h1>
+             <div class="card" id="notification-prompt-card" style="display: none;">
+                <h2 style="font-size: 18px; margin-bottom: 10px;">🔔 קבל עדכונים בזמן אמת</h2>
+                <p style="color: var(--text-light); margin-bottom: 15px;">אשר קבלת התראות כדי לקבל עדכונים על ההזמנות שלך ישירות לנייד.</p>
+                <button class="btn" id="enable-notifications-btn">אשר קבלת התראות</button>
+            </div>
+            <!-- Other page content will be rendered here by JS -->
+        </div>
+        <!-- Other pages will be dynamically controlled by JS -->
+        <div id="page-containers" class="page"></div>
+        <div id="page-history" class="page"></div>
+        <div id="page-chat" class="page"></div>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-btn active" data-page="page-home">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>דף הבית</span>
+        </a>
+        <a href="#" class="nav-btn" data-page="page-containers">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg>
+            <span>המכולות שלי</span>
+        </a>
+        <a href="#" class="nav-btn" data-page="page-history">
+           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+            <span>היסטוריה</span>
+        </a>
+        <a href="#" class="nav-btn" data-page="page-chat">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 15-3-3-3 3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"></path><path d="m3 9 3 3 3-3"></path></svg>
+            <span>צ'אט</span>
+        </a>
+    </nav>
+    
+    <div class="fab-container" id="fab-container">
+        <!-- FAB actions will be populated by JS -->
+        <button class="fab" id="fab">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+        </button>
+    </div>
+    
+    <!-- Modals and other dynamic elements will be handled by JS -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ========== 1. CONFIGURATION & STATE ==========
+            const API_URL = "https://script.google.com/macros/s/AKfycbyXWrzRLGD9RyoVLjpjMcE0bQUS7BhEs9vgs_pmHwqRIfoRIYVq945LowncSwtJXj_o/exec";
+            
+            const firebaseConfig = {
+                apiKey: "AIzaSyDy3k1AoEKeuCKjmFxefn9fapeqv2Le1_w",
+                authDomain: "hsaban94-cc777.firebaseapp.com",
+                projectId: "hsaban94-cc777",
+                storageBucket: "hsaban94-cc777.appspot.com",
+                messagingSenderId: "299206369469",
+                appId: "1:299206369469:web:7527baa329def3a29457d4",
+            };
+
+            let clientState = { id: null, name: null, orders: [], addresses: new Set(), historyChart: null };
+
+            // ========== 2. DOM ELEMENTS ==========
+            const clientNameHeader = document.getElementById('client-name-header');
+            const clockDiv = document.getElementById('clock');
+            const dateDiv = document.getElementById('date');
+            const notificationPromptCard = document.getElementById('notification-prompt-card');
+            const enableNotificationsBtn = document.getElementById('enable-notifications-btn');
+            const pages = document.querySelectorAll('.page');
+            const navButtons = document.querySelectorAll('.nav-btn');
+
+            // ========== 3. CORE APP LOGIC ==========
+
+            function initApp() {
+                // Initialize Firebase and Service Worker first
+                initFirebasePush();
+
+                setupEventListeners();
+                updateClock();
+                setInterval(updateClock, 1000);
+
+                const storedClientId = localStorage.getItem('saban_client_id');
+                if (storedClientId) {
+                    loadClientData(storedClientId);
+                } else {
+                    promptForClientId();
+                }
+                setInterval(() => loadClientData(clientState.id, true), 60000); // Auto-refresh
+            }
+
+            async function loadClientData(clientId, isRefresh = false) {
+                if (!clientId) return;
+                try {
+                    const data = await apiPost({ action: 'getClientData', identifier: clientId });
+                    if (data.status === 'error' || !data.clientName) {
+                        throw new Error(data.message || "Client not found");
+                    }
+                    clientState = { 
+                        id: data.clientId, 
+                        name: data.clientName, 
+                        orders: data.orders || [], 
+                        addresses: new Set(data.orders.map(o => o['כתובת']).filter(Boolean)), 
+                        historyChart: clientState.historyChart 
+                    };
+                    localStorage.setItem('saban_client_id', data.clientId);
+                    renderHeaderAndGreeting();
+                    // Simplified: Render content for the currently active page
+                    navigateTo('page-home'); 
+                } catch (error) {
+                    console.error("Failed to load client data:", error);
+                    localStorage.removeItem('saban_client_id');
+                    alert("שגיאה בטעינת נתוני לקוח. אנא רענן ונסה שוב.");
+                    promptForClientId();
+                }
+            }
+            
+            async function apiPost(body) { 
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                    body: JSON.stringify(body) 
+                }); 
+                if (!response.ok) throw new Error(`Network error (status ${response.status})`); 
+                return await response.json(); 
+            }
+
+            function promptForClientId() {
+                const identifier = prompt("שלום! אנא הזן מספר לקוח או טלפון כדי להתחבר:");
+                if (identifier && identifier.trim() !== '') {
+                    loadClientData(identifier.trim());
+                } else {
+                    document.body.innerHTML = `<div style="padding: 20px; text-align: center;"><h1>נדרש מספר לקוח או טלפון. אנא רענן ונסה שוב.</h1></div>`;
+                }
+            }
+
+            // ========== 4. NOTIFICATIONS LOGIC ==========
+            
+            function initFirebasePush() {
+                try {
+                    if ('serviceWorker' in navigator && typeof firebase !== 'undefined' && firebaseConfig.apiKey) {
+                        // FIX: Register service worker explicitly.
+                        // Make sure 'firebase-messaging-sw.js' is in the SAME directory as this HTML file.
+                        navigator.serviceWorker.register('firebase-messaging-sw.js')
+                            .then((registration) => {
+                                console.log('Service Worker registered successfully.');
+                                if (!firebase.apps.length) {
+                                    firebase.initializeApp(firebaseConfig);
+                                }
+                                const messaging = firebase.messaging();
+                                
+                                // Listen for incoming messages when the app is in the foreground
+                                messaging.onMessage((payload) => {
+                                    console.log('Message received. ', payload);
+                                    alert(`התראה חדשה: ${payload.notification.title}\n${payload.notification.body}`);
+                                });
+
+                                // Check notification permission status
+                                if (Notification.permission === 'granted') {
+                                    notificationPromptCard.style.display = 'none';
+                                    retrieveToken(messaging);
+                                } else if (Notification.permission !== 'denied') {
+                                    notificationPromptCard.style.display = 'block';
+                                }
+                            }).catch((err) => {
+                                console.error('Service Worker registration failed: ', err);
+                            });
+                    } else {
+                         console.warn("Firebase or Service Worker not supported/configured.");
+                    }
+                } catch(e) {
+                    console.error("Firebase initialization failed:", e);
+                }
+            }
+
+            async function requestNotificationPermission() {
+                try {
+                    const messaging = firebase.messaging();
+                    await messaging.requestPermission();
+                    alert('אישור התקבל! כעת תוכל לקבל עדכונים.');
+                    notificationPromptCard.style.display = 'none';
+                    retrieveToken(messaging);
+                } catch (error) {
+                    console.error('Unable to get permission to notify.', error);
+                    alert('אישור נדחה. ניתן לאפשר התראות בהגדרות הדפדפן.');
+                    notificationPromptCard.style.display = 'none';
+                }
+            }
+
+            async function retrieveToken(messaging) {
+                try {
+                    // NOTE: You MUST generate this key in your Firebase project console
+                    // under Project Settings > Cloud Messaging > Web configuration.
+                    const VAPID_KEY = "BD74H8MAwIVd-5-yJe9DS652Bl332JUnY-tW6CpSGFo-aFf2m1iX52YQcxpWJ4sV61s3mSwqGn83nHihHIoQ1TM"; 
+                    const currentToken = await messaging.getToken({ vapidKey: VAPID_KEY });
+                    if (currentToken) {
+                        console.log('Client FCM Token:', currentToken);
+                        sendTokenToServer(currentToken);
+                    } else {
+                        console.log('No registration token available. Request permission to generate one.');
+                    }
+                } catch (err) {
+                    console.error('An error occurred while retrieving token. ', err);
+                }
+            }
+
+            async function sendTokenToServer(token) {
+                const storedToken = localStorage.getItem('fcm_token');
+                if (token === storedToken && clientState.id) return; // No need to resend if token and client are the same
+                if (!clientState.id) return; // Wait until client ID is loaded
+
+                try {
+                    await apiPost({ action: 'saveClientToken', clientId: clientState.id, token: token });
+                    localStorage.setItem('fcm_token', token);
+                    console.log("Token sent to server successfully.");
+                } catch (error) {
+                    console.error("Error sending token to server:", error);
+                }
+            }
+
+            // ========== 5. UI RENDERING & EVENT HANDLERS ==========
+            
+            function setupEventListeners() {
+                navButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        navigateTo(btn.dataset.page);
+                    });
+                });
+                enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
+            }
+            
+            function navigateTo(pageId) {
+                pages.forEach(p => p.classList.remove('active'));
+                const nextPage = document.getElementById(pageId);
+                if (nextPage) nextPage.classList.add('active');
+                
+                navButtons.forEach(b => b.classList.remove('active'));
+                const nextButton = document.querySelector(`.nav-btn[data-page="${pageId}"]`);
+                if(nextButton) nextButton.classList.add('active');
+
+                // Render content for the new page
+                // This is a simplified example; you would have specific render functions
+                // renderHomePage(), renderContainersPage(), etc.
+                nextPage.innerHTML = `<h1 class="page-title">${nextButton.textContent.trim()}</h1><div class="card"><p>תוכן דף ${nextButton.textContent.trim()}.</p></div>`;
+                if(pageId === 'page-home') renderHeaderAndGreeting();
+            }
+
+            function updateClock() {
+                const now = new Date();
+                clockDiv.textContent = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+                dateDiv.textContent = now.toLocaleDateString('he-IL', { weekday: 'long', day: '2-digit', month: '2-digit' });
+            }
+
+            function renderHeaderAndGreeting() {
+                clientNameHeader.textContent = clientState.name;
+                const hour = new Date().getHours();
+                let greeting = "ברוך הבא,";
+                if (hour >= 5 && hour < 12) greeting = "בוקר טוב,";
+                else if (hour >= 12 && hour < 18) greeting = "צהריים טובים,";
+                else greeting = "ערב טוב,";
+                document.getElementById('greeting').textContent = `${greeting} ${clientState.name.split(' ')[0]}`;
+            }
+
+            // ========== 6. START APP ==========
+            initApp();
+        });
+    </script>
+</body>
+</html>
