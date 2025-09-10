@@ -291,24 +291,49 @@
         // --- 2. CORE LOGIC ---
         
         /**
-         * Fetches all dashboard data from the backend in a single call.
+         * Fetches data from a specific API endpoint using GET.
+         * @param {string} action - The action to perform (e.g., 'getAllClients').
+         */
+        async function fetchData(action) {
+            const response = await fetch(`${API_URL}?action=${action}`);
+            if (!response.ok) {
+                throw new Error(`שגיאת רשת (${response.status}) בפעולה: ${action}`);
+            }
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(`שגיאת שרת בפעולה ${action}: ${data.error}`);
+            }
+            return data;
+        }
+
+        /**
+         * Fetches all dashboard data from the backend using multiple GET calls.
          */
         async function loadDashboardData() {
             try {
-                // Using POST to potentially send more complex requests in the future
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'getDashboardData' })
-                });
-                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
-                const data = await response.json();
-                if (data.error) throw new Error(`API error: ${data.error}`);
+                // Fetch all data in parallel to improve loading speed
+                const [clientsData, requestsData] = await Promise.all([
+                    fetchData('getAllClients'),
+                    fetchData('getRecentRequests')
+                ]);
                 
-                // Render all components with the fetched data
-                renderOnlineUsers(data.allClients || []);
-                renderActiveClients(data.activeClients || []);
-                renderRecentRequests(data.recentRequests || []);
+                // Process and render clients data
+                // NOTE: Using active clients for both sections as a workaround
+                if (clientsData && clientsData.clients) {
+                    const onlineUsers = clientsData.clients.map(c => ({...c, isOnline: true, lastSeen: 'פעיל כעת' }));
+                    renderOnlineUsers(onlineUsers);
+                    renderActiveClients(clientsData.clients);
+                } else {
+                    renderOnlineUsers([]);
+                    renderActiveClients([]);
+                }
+
+                // Process and render requests data
+                if (requestsData && requestsData.requests) {
+                    renderRecentRequests(requestsData.requests);
+                } else {
+                    renderRecentRequests([]);
+                }
 
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
@@ -318,6 +343,7 @@
                 dom.requestsLoader.textContent = 'טעינת הנתונים נכשלה';
             }
         }
+
 
         // --- 3. UI RENDERING FUNCTIONS ---
 
@@ -330,7 +356,7 @@
             dom.onlineUsersList.innerHTML = '';
 
             if (clients.length === 0) {
-                dom.onlineUsersList.innerHTML = '<li class="placeholder-item" style="width: 100%;">לא נמצאו לקוחות במערכת.</li>';
+                dom.onlineUsersList.innerHTML = '<li class="placeholder-item" style="width: 100%;">לא נמצאו לקוחות פעילים.</li>';
                 return;
             }
 
@@ -406,7 +432,7 @@
                 const item = document.createElement('li');
                 const requestTypeClean = req.type.split(" ")[0];
                 const iconMap = {
-                    'החלפה': '🔄', 'העלאה': '🔼', 'הורדה': '🔽', 'הודעת': '💬'
+                    'החלפה': '🔄', 'העלאה': '🔼', 'הורדה': '🔽', 'הודעת': '💬', 'פינוי': '🔼'
                 };
                 item.innerHTML = `
                     <div class="icon ${requestTypeClean}">
@@ -519,3 +545,4 @@
     </script>
 </body>
 </html>
+
