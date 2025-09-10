@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>אזור אישי - ח.סבן</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ⭐️⭐️⭐️ FIREBASE SDKs - REQUIRED FOR NOTIFICATIONS ⭐️⭐️⭐️ -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <style>
+        :root {
+            --brand: #0b72b9;
+            --accent: #ff9f1c;
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --text-dark: #1a202c;
+            --text-light: #4a5568;
+            --text-muted: #718096;
+            --border: #e2e8f0;
+            --success: #38a169;
+            --warning: #dd6b20;
+            --danger: #e53e3e;
+            --radius: 16px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; overflow: hidden; background-color: var(--bg); }
+        body { font-family: 'Assistant', sans-serif; color: var(--text-dark); display: flex; flex-direction: column; overscroll-behavior-y: contain; }
+
+        .app-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background-color: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .header-profile { display: flex; align-items: center; gap: 10px; }
+        .header-profile img { width: 32px; height: 32px; border-radius: 50%; }
+        .header-profile-name { font-weight: 700; font-size: 16px; }
+        .header-time { text-align: center; font-weight: 600; }
+        .header-time .date { font-size: 12px; color: var(--text-muted); }
+        .header-status { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
+        .online-dot { width: 10px; height: 10px; background-color: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+
+        .app-container { flex-grow: 1; overflow: hidden; position: relative; }
+        .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; padding: 20px 15px 120px 15px; -webkit-overflow-scrolling: touch; background-color: var(--bg); visibility: hidden; opacity: 0; transform: translateX(100%); }
+        .page.active { visibility: visible; opacity: 1; transform: translateX(0); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s; }
+        .page.exiting { transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s; }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background-color: var(--card); display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.2s ease-in-out; }
+        .nav-btn.active { color: var(--brand); background-color: #f8faff; }
+        .nav-btn:active { transform: scale(0.95); background-color: rgba(11, 114, 185, 0.1); }
+        .nav-btn svg { width: 28px; height: 28px; }
+        
+        .card { background-color: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); animation: fadeIn 0.5s ease-out forwards; }
+        .page-title { font-size: 28px; font-weight: 700; color: var(--text-dark); margin-bottom: 20px; }
+        .btn { background: var(--brand); color: white; border: none; padding: 14px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 16px; width: 100%; transition: all 0.2s ease-in-out; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn.secondary { background-color: #eef2f7; color: var(--text-dark); }
+        .btn:active { transform: scale(0.98); }
+
+        .eta-card { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-radius: var(--radius); background-color: #f8faff; border: 1px solid var(--border); }
+        .eta-card.active { background: linear-gradient(135deg, #e6f7ff, #e0f2f1); }
+        .eta-card.active .eta-label { color: var(--brand); }
+        .eta-info .label { font-size: 14px; color: var(--text-muted); }
+        .eta-info .value { font-size: 18px; font-weight: 700; }
+        .eta-truck { font-size: 32px; animation: pulse 2s infinite ease-in-out; }
+
+        .progress-bar { width: 100%; height: 12px; background-color: #e0e0e0; border-radius: 6px; overflow: hidden; margin-top: 5px; }
+        .progress-bar-inner { height: 100%; background: linear-gradient(90deg, var(--success), #a5d6a7); border-radius: 6px; transition: width 0.5s ease; animation: neon-blink 2s infinite alternate; }
+        .progress-bar.warning .progress-bar-inner { background: linear-gradient(90deg, var(--warning), #ffcc80); }
+        .progress-bar.danger .progress-bar-inner { background: linear-gradient(90deg, var(--danger), #ef9a9a); }
+
+        .history-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .history-table th, .history-table td { padding: 10px; border-bottom: 1px solid var(--border); text-align: right; }
+        .history-table th { font-weight: 700; }
+
+        .chat-templates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .template-btn { background-color: #f8faff; border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: right; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+        .template-btn:hover { border-color: var(--brand); color: var(--brand); }
+        
+        .fab-container { position: fixed; bottom: 100px; left: 20px; z-index: 1000; }
+        .fab { width: 60px; height: 60px; border-radius: 50%; background-color: var(--brand); color: white; border: none; box-shadow: 0 8px 20px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        .fab.active { transform: rotate(135deg); }
+        .fab-actions { position: absolute; bottom: 75px; left: 5px; display: flex; flex-direction: column; gap: 15px; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+        .fab-container.active .fab-actions { opacity: 1; visibility: visible; }
+        .fab-action { display: flex; align-items: center; gap: 12px; color: var(--text-dark); text-decoration: none; transform: translateY(20px); transition: all 0.3s ease; }
+        .fab-container.active .fab-action { transform: translateY(0); }
+        .fab-action .label { background-color: var(--card); padding: 6px 12px; border-radius: 8px; box-shadow: var(--shadow); font-weight: 600; white-space: nowrap; }
+        .fab-action .icon { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .fab-action .icon.download { background-color: var(--success); }
+        .fab-action .icon.swap { background-color: var(--accent); }
+        .fab-action .icon.pickup { background-color: var(--danger); }
+        
+        .scroll-to-top { position: fixed; bottom: 100px; right: 20px; width: 45px; height: 45px; border-radius: 50%; background-color: rgba(0,0,0,0.4); color: white; border: none; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 999; opacity: 0; transition: opacity 0.3s, transform 0.3s; }
+        .scroll-to-top.show { display: flex; opacity: 1; }
+        
+         .modal-overlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content { background-color: white; padding: 25px; border-radius: var(--radius); width: 90%; max-width: 500px; position: relative; transform: scale(0.95); transition: transform 0.3s; }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+        .modal-close { position: absolute; top: 10px; left: 15px; background: none; border: none; font-size: 1.8rem; cursor: pointer; color: var(--text-muted); }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--brand); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: 'Assistant', sans-serif; }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-profile">
+            <img src="https://img.icons8.com/?size=100&id=7WwZau6gMj6x&format=png&color=000000" alt="Profile">
+            <span class="header-profile-name" id="client-name-header">...</span>
+        </div>
+        <div class="header-time">
+            <div id="clock"></div>
+            <div class="date" id="date"></div>
+        </div>
+        <div class="header-status">
+            <span>אונליין</span>
+            <div class="online-dot"></div>
+        </div>
+    </header>
+
+    <main class="app-container" id="app-container">
+        <!-- Page: Home -->
+        <div id="page-home" class="page active">
+            <h1 class="page-title" id="greeting"></h1>
+             <div class="card" id="notification-prompt-card" style="display: none;">
+                <h2 class="card-title" style="font-size: 18px;">🔔 קבל עדכונים בזמן אמת</h2>
+                <p style="color: var(--text-light); margin-bottom: 15px;">אשר קבלת התראות כדי לקבל עדכונים על ההזמנות שלך ישירות לנייד.</p>
+                <button class="btn" id="enable-notifications-btn">אשר קבלת התראות</button>
+            </div>
+            <div class="card" id="eta-card-container"></div>
+            <div id="active-orders-container"></div>
+            <div id="no-active-orders" class="card" style="display: none; text-align: center;">
+                <p style="font-size: 18px; font-weight: 600;">אין לך כרגע הזמנות פעילות.</p>
+            </div>
+        </div>
+        <!-- Page: My Containers -->
+        <div id="page-containers" class="page">
+            <h1 class="page-title">המכולות שלי</h1>
+            <div id="containers-list"></div>
+        </div>
+        <!-- Page: History -->
+        <div id="page-history" class="page">
+            <h1 class="page-title">היסטוריית הזמנות</h1>
+             <div class="card">
+                <div id="history-chart-container" style="margin-bottom: 20px;">
+                    <canvas id="historyChart"></canvas>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="history-table">
+                        <thead><tr><th>תעודה</th><th>תאריך</th><th>פעולה</th><th>כתובת</th></tr></thead>
+                        <tbody id="history-table-body"></tbody>
+                    </table>
+                </div>
+             </div>
+        </div>
+        <!-- Page: Chat -->
+        <div id="page-chat" class="page">
+            <h1 class="page-title">צור קשר</h1>
+            <div class="card">
+                <p style="font-weight: 600; margin-bottom: 10px;">בחר הודעה מהירה:</p>
+                <div class="chat-templates" id="chat-templates"></div>
+                <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
+                 <form id="chat-form">
+                     <div class="form-group">
+                        <label for="chat-message">או כתוב הודעה חופשית:</label>
+                        <textarea id="chat-message" required></textarea>
+                    </div>
+                    <button type="submit" class="btn">שלח הודעה</button>
+                 </form>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-btn active" data-page="page-home">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>דף הבית</span>
+        </a>
+        <a href="#" class="nav-btn" data-page="page-containers">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg>
+            <span>המכולות שלי</span>
+        </a>
+        <a href="#" class="nav-btn" data-page="page-history">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+            <span>היסטוריה</span>
+        </a>
+        <a href="#" class="nav-btn" data-page="page-chat">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 15-3-3-3 3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"></path><path d="m3 9 3 3 3-3"></path></svg>
+            <span>צ'אט</span>
+        </a>
+    </nav>
+    
+    <div class="fab-container" id="fab-container">
+        <div class="fab-actions">
+            <a href="#" class="fab-action" data-action="העלאה">
+                <span class="label">בקש פינוי</span>
+                <div class="icon pickup"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"></path><path d="m6 11 6-6 6 6"></path><path d="M19 21H5"></path></svg></div>
+            </a>
+            <a href="#" class="fab-action" data-action="החלפה">
+                <span class="label">בקש החלפה</span>
+                <div class="icon swap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L4 7l4 4"></path><path d="M4 7h16"></path><path d="m16 21 4-4-4-4"></path><path d="M20 17H4"></path></svg></div>
+            </a>
+            <a href="#" class="fab-action" data-action="הורדה">
+                 <span class="label">הזמן חדשה</span>
+                <div class="icon download"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></div>
+            </a>
+        </div>
+        <button class="fab" id="fab">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+        </button>
+    </div>
+    
+    <button class="scroll-to-top" id="scroll-to-top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
+    
+     <!-- Modal for new order -->
+    <div id="modal-container" class="modal-overlay">
+        <div class="modal-content">
+            <button id="modal-close-btn" class="modal-close">&times;</button>
+            <h3 id="modal-title" style="color: var(--brand); margin-bottom: 20px;"></h3>
+            <form id="new-order-form-modal">
+                <div class="form-group">
+                    <label for="address-select-modal">לאיזו כתובת?</label>
+                    <select id="address-select-modal" name="כתובת"></select>
+                </div>
+                 <div class="form-group">
+                    <label for="new-address-modal">או הקלד כתובת חדשה (אם צריך)</label>
+                    <input type="text" id="new-address-modal" placeholder="עיר, רחוב, מספר בית">
+                </div>
+                 <div class="form-group">
+                    <label>מיקום מדויק (אופציונלי)</label>
+                    <button type="button" class="btn secondary" id="get-location-btn" style="width: 100%;">הבא אותי לכאן</button>
+                    <input type="hidden" id="location-coords" name="מיקום">
+                 </div>
+                 <div class="form-group">
+                    <label for="order-notes-modal">הערות להזמנה</label>
+                    <textarea id="order-notes-modal" name="הערות" placeholder="לדוגמה: נא לתאם הגעה טלפונית..."></textarea>
+                </div>
+                <button type="submit" class="btn">שלח בקשה</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ⭐️⭐️⭐️ API URL UPDATED ⭐️⭐️⭐️
+            const API_URL = "https://script.google.com/macros/s/AKfycbwfRTTD1IyvbJPNuIzsip4kN-QX--hkRbGv7cHgZckODkZfOzPXaJQegwDMXvSethv0/exec";
+            
+            // ⭐️⭐️⭐️ FIREBASE CONFIG - PASTED FROM USER ⭐️⭐️⭐️
+            const firebaseConfig = {
+                apiKey: "AIzaSyDy3k1AoEKeuCKjmFxefn9fapeqv2Le1_w",
+                authDomain: "hsaban94-cc777.firebaseapp.com",
+                databaseURL: "https://hsaban94-cc777.firebaseio.com",
+                projectId: "hsaban94-cc777",
+                storageBucket: "hsaban94-cc777.appspot.com",
+                messagingSenderId: "299206369469",
+                appId: "1:299206369469:web:7527baa329def3a29457d4",
+                measurementId: "G-J2N5Z54MBL"
+            };
+
+            const CHAT_TEMPLATES = ["המכולה מלאה, אשמח לתאם פינוי.", "צריך להחליף את המכולה במכולה ריקה.", "האם ניתן לקבל מכולה נוספת?", "מה צפי ההגעה של הנהג?", "תודה רבה על השירות המהיר!", "יש לי שאלה בנוגע לחיוב.", "האם ניתן להאריך את זמן השהייה של המכולה?", "עדכון כתובת - הפינוי יתבצע מכתובת אחרת.", "בקשה דחופה למכולה, אנא צרו קשר.", "הכל בסדר, רק רציתי לוודא שההזמנה התקבלה."];
+            let clientState = { id: null, name: null, orders: [], addresses: new Set(), historyChart: null };
+            let refreshInterval;
+            
+            const appContainer = document.getElementById('app-container');
+            const pages = document.querySelectorAll('.page');
+            const clientNameHeader = document.getElementById('client-name-header');
+            const clockDiv = document.getElementById('clock');
+            const dateDiv = document.getElementById('date');
+            const greetingDiv = document.getElementById('greeting');
+            const activeOrdersContainer = document.getElementById('active-orders-container');
+            const noActiveOrdersDiv = document.getElementById('no-active-orders');
+            const etaCardContainer = document.getElementById('eta-card-container');
+            const containersListDiv = document.getElementById('containers-list');
+            const historyTableBody = document.getElementById('history-table-body');
+            const historyChartCanvas = document.getElementById('historyChart');
+            const chatTemplatesContainer = document.getElementById('chat-templates');
+            const chatForm = document.getElementById('chat-form');
+            const navButtons = document.querySelectorAll('.nav-btn');
+            const fabContainer = document.getElementById('fab-container');
+            const fab = document.getElementById('fab');
+            const fabActions = document.querySelectorAll('.fab-action');
+            const scrollToTopBtn = document.getElementById('scroll-to-top');
+            const modalContainer = document.getElementById('modal-container');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const modalTitle = document.getElementById('modal-title');
+            const orderFormModal = document.getElementById('new-order-form-modal');
+            const addressSelectModal = document.getElementById('address-select-modal');
+            const getLocationBtn = document.getElementById('get-location-btn');
+            const notificationPromptCard = document.getElementById('notification-prompt-card');
+            const enableNotificationsBtn = document.getElementById('enable-notifications-btn');
+
+            function initApp() {
+                setupEventListeners();
+                updateClock();
+                setInterval(updateClock, 1000);
+                const storedClientId = localStorage.getItem('saban_client_id');
+                if (storedClientId) loadClientData(storedClientId);
+                else promptForClientId();
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(() => loadClientData(clientState.id, true), 60000);
+            }
+
+            async function loadClientData(clientId, isRefresh = false) {
+                if (!clientId) return;
+                if (!isRefresh) appContainer.style.opacity = '0.5';
+                try {
+                    const data = await apiPost({ action: 'getClientData', identifier: clientId });
+                    if (data.status === 'error' || !data.clientName) throw new Error(data.message || "Client not found");
+                    clientState = { id: data.clientId, name: data.clientName, orders: data.orders || [], addresses: new Set(data.orders.map(o => o['כתובת']).filter(Boolean)), historyChart: clientState.historyChart };
+                    localStorage.setItem('saban_client_id', data.clientId);
+                    renderAllPages();
+                    initFirebasePush();
+                } catch (error) {
+                    console.error("Failed to load client data:", error);
+                    localStorage.removeItem('saban_client_id');
+                    if (error.message.includes("not found")) alert("מספר לקוח או טלפון לא נמצאו. אנא ודא שהקלדת את הפרט הנכון ונסה שוב.");
+                    else alert("שגיאה בטעינת נתוני לקוח. אנא בדוק את חיבור האינטרנט ונסה שוב.");
+                    promptForClientId();
+                } finally {
+                    if (!isRefresh) appContainer.style.opacity = '1';
+                }
+            }
+            
+            async function apiPost(body) { 
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                    body: JSON.stringify(body) 
+                }); 
+                if (!response.ok) throw new Error(`שגיאת רשת (סטטוס ${response.status})`); 
+                return await response.json(); 
+            }
+
+            function promptForClientId() {
+                const identifier = prompt("שלום! אנא הזן מספר לקוח או מספר טלפון כדי להתחבר:");
+                if (identifier && identifier.trim() !== '') loadClientData(identifier.trim());
+                else document.body.innerHTML = `<div style="padding: 20px; text-align: center;"><h1>נדרש מספר לקוח או טלפון. אנא רענן ונסה שוב.</h1></div>`;
+            }
+            
+             function parseDate(dateString) {
+                if (!dateString) return null;
+                const d = new Date(dateString);
+                return isNaN(d.getTime()) ? null : d;
+            }
+
+            // ========== PAGE RENDERING ==========
+            
+            function renderAllPages() {
+                renderHeaderAndGreeting();
+                renderHomePage();
+                renderContainersPage();
+                renderHistoryPage();
+                renderChatPage();
+            }
+            
+            function updateClock() {
+                const now = new Date();
+                clockDiv.textContent = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+                dateDiv.textContent = now.toLocaleDateString('he-IL', { weekday: 'long', day: '2-digit', month: '2-digit' });
+            }
+
+            function renderHeaderAndGreeting() {
+                clientNameHeader.textContent = clientState.name;
+                const hour = new Date().getHours();
+                let greeting = "ברוך הבא,";
+                if (hour >= 5 && hour < 12) greeting = "בוקר טוב,";
+                else if (hour >= 12 && hour < 18) greeting = "צהריים טובים,";
+                else greeting = "ערב טוב,";
+                greetingDiv.textContent = `${greeting} ${clientState.name.split(' ')[0]}`;
+            }
+
+            function renderHomePage() {
+                const activeOrders = clientState.orders.filter(o => o['סטטוס'] !== 'סגור');
+                activeOrdersContainer.innerHTML = '';
+                if (activeOrders.length === 0) {
+                    noActiveOrdersDiv.style.display = 'block';
+                    etaCardContainer.style.display = 'none';
+                } else {
+                    noActiveOrdersDiv.style.display = 'none';
+                    etaCardContainer.style.display = 'block';
+                    const mainOrder = activeOrders[0];
+                    activeOrdersContainer.innerHTML = `<div class="card"><h2 class="card-title"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg>ההזמנה הפעילה שלך</h2><p style="font-size: 18px; font-weight: 600;">${mainOrder['סוג מכולה'] || 'מכולה'} בכתובת:</p><p style="font-size: 16px; color: var(--text-light);">${mainOrder['כתובת']}</p></div>`;
+                    const eta = parseDate(mainOrder['זמן הגעה משוער']);
+                    const driver = mainOrder['שם נהג'];
+                     if(eta instanceof Date && !isNaN(eta)) {
+                         etaCardContainer.innerHTML = `<div class="eta-card active"><div class="eta-info"><div class="label">${driver ? `הנהג ${driver} בדרך` : 'צפי הגעה'}</div><div class="value">${eta.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'})}</div></div><div class="eta-truck">🚚</div></div>`;
+                    } else if (mainOrder['זמן הגעה משוער'] || driver) {
+                        etaCardContainer.innerHTML = `<div class="eta-card active"><div class="eta-info"><div class="label">${driver ? `הנהג ${driver} בדרך` : 'צפי הגעה'}</div><div class="value">${mainOrder['זמן הגעה משוער'] || 'יצירת קשר בקרוב'}</div></div><div class="eta-truck">🚚</div></div>`;
+                    } else {
+                        etaCardContainer.innerHTML = `<div class="eta-card"><div class="eta-info"><div class="label">צפי הגעה</div><div class="value">טרם עודכן</div></div></div>`;
+                    }
+                }
+            }
+            
+            function renderContainersPage() {
+                containersListDiv.innerHTML = '';
+                const activeOrdersWithContainers = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && o['מכולה ירדה']);
+                if (activeOrdersWithContainers.length === 0) {
+                    containersListDiv.innerHTML = `<div class="card" style="text-align: center;"><p>אין לך מכולות פעילות כרגע.</p></div>`;
+                    return;
+                }
+                activeOrdersWithContainers.forEach(order => {
+                    const startDate = parseDate(order['תאריך הזמנה']);
+                    const endDate = parseDate(order['תאריך סיום צפוי']);
+                    if (!startDate || !endDate) return;
+
+                    const now = new Date();
+                    const totalDuration = (endDate - startDate) / (1000 * 3600 * 24);
+                    const elapsedDuration = (now - startDate) / (1000 * 3600 * 24);
+                    let progress = (totalDuration > 0) ? Math.min(100, (elapsedDuration / totalDuration) * 100) : 0;
+                    
+                    let progressClass = '';
+                    if (progress > 85) progressClass = 'danger';
+                    else if (progress > 60) progressClass = 'warning';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `<div style="display:flex; justify-content: space-between; align-items: baseline;"><h3 style="font-size: 18px; font-weight: 700;">מכולה ${order['מכולה ירדה']}</h3><span style="font-size: 14px; color: var(--text-muted);">${order['כתובת']}</span></div><div style="display:flex; justify-content: space-between; font-size: 14px; margin-top: 15px;"><span>התחלה: ${startDate.toLocaleDateString('he-IL')}</span><span>סיום: ${endDate.toLocaleDateString('he-IL')}</span></div><div class="progress-bar ${progressClass}"><div class="progress-bar-inner" style="width: ${progress}%;"></div></div><p style="text-align: center; margin-top: 10px; font-weight: 600;">נשארו כ-${Math.max(0, Math.round(totalDuration - elapsedDuration))} ימים לסיום</p>`;
+                    containersListDiv.appendChild(card);
+                });
+            }
+
+            function renderHistoryPage() {
+                historyTableBody.innerHTML = '';
+                clientState.orders.forEach(order => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${order['מספר תעודה'] || ''}</td><td>${parseDate(order['תאריך הזמנה']).toLocaleDateString('he-IL')}</td><td>${order['סוג פעולה'] || 'הורדה'}</td><td>${order['כתובת'] || ''}</td>`;
+                    historyTableBody.appendChild(row);
+                });
+                if(clientState.historyChart) clientState.historyChart.destroy();
+                const monthlyData = clientState.orders.reduce((acc, order) => {
+                    const date = parseDate(order['תאריך הזמנה']);
+                    if(date) {
+                       const month = date.toLocaleDateString('he-IL', { year: '2-digit', month: 'short' });
+                       acc[month] = (acc[month] || 0) + 1;
+                    }
+                    return acc;
+                }, {});
+                clientState.historyChart = new Chart(historyChartCanvas, {
+                    type: 'bar',
+                    data: { labels: Object.keys(monthlyData), datasets: [{ label: 'כמות הזמנות', data: Object.values(monthlyData), backgroundColor: 'var(--brand)', borderRadius: 5 }] },
+                    options: { responsive: true, plugins: { legend: { display: true, labels: { boxWidth: 0 } } } }
+                });
+            }
+
+            function renderChatPage() {
+                chatTemplatesContainer.innerHTML = '';
+                CHAT_TEMPLATES.forEach(template => {
+                    const btn = document.createElement('button');
+                    btn.className = 'template-btn';
+                    btn.textContent = template;
+                    btn.onclick = () => handleChatMessage(template);
+                    chatTemplatesContainer.appendChild(btn);
+                });
+            }
+
+            // ========== EVENT HANDLERS & SUBMISSIONS ==========
+
+            function setupEventListeners() {
+                navButtons.forEach(btn => btn.addEventListener('click', (e) => { e.preventDefault(); navigateTo(btn.dataset.page); }));
+                fab.addEventListener('click', () => fabContainer.classList.toggle('active'));
+                fabActions.forEach(action => action.addEventListener('click', (e) => { e.preventDefault(); openNewOrderModal(action.dataset.action); fabContainer.classList.remove('active'); }));
+                appContainer.addEventListener('scroll', () => scrollToTopBtn.classList.toggle('show', appContainer.scrollTop > 200));
+                scrollToTopBtn.addEventListener('click', () => appContainer.scrollTo({ top: 0, behavior: 'smooth' }));
+                modalCloseBtn.addEventListener('click', () => modalContainer.classList.remove('show'));
+                orderFormModal.addEventListener('submit', handleNewOrderSubmit);
+                chatForm.addEventListener('submit', handleChatSubmit);
+                getLocationBtn.addEventListener('click', handleGetLocation);
+                enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
+            }
+            
+            function navigateTo(pageId) {
+                const currentPage = document.querySelector('.page.active');
+                const nextPage = document.getElementById(pageId);
+                if (currentPage === nextPage) return;
+                currentPage.classList.add('exiting');
+                setTimeout(() => {
+                    currentPage.classList.remove('active', 'exiting');
+                    nextPage.classList.add('active');
+                    navButtons.forEach(b => b.classList.remove('active'));
+                    document.querySelector(`.nav-btn[data-page="${pageId}"]`).classList.add('active');
+                    appContainer.scrollTop = 0;
+                }, 400);
+            }
+
+            function openNewOrderModal(actionType) {
+                modalTitle.textContent = `בקשת ${actionType}`;
+                orderFormModal.dataset.actionType = actionType;
+                addressSelectModal.innerHTML = '';
+                clientState.addresses.forEach(address => {
+                    const option = document.createElement('option');
+                    option.value = address;
+                    option.textContent = address;
+                    addressSelectModal.appendChild(option);
+                });
+                const newAddressOption = document.createElement('option');
+                newAddressOption.value = 'new';
+                newAddressOption.textContent = 'כתובת חדשה...';
+                addressSelectModal.appendChild(newAddressOption);
+                modalContainer.classList.add('show');
+            }
+
+            async function handleNewOrderSubmit(e) {
+                e.preventDefault();
+                const actionType = e.target.dataset.actionType;
+                const address = document.getElementById('new-address-modal').value.trim() || addressSelectModal.value;
+                const notes = document.getElementById('order-notes-modal').value.trim();
+                const location = document.getElementById('location-coords').value;
+                if (address === 'new' && !document.getElementById('new-address-modal').value.trim()) {
+                    alert("אנא בחר כתובת קיימת או הקלד כתובת חדשה.");
+                    return;
+                }
+                let details = `כתובת: ${address}. הערות: ${notes || 'אין'}.`;
+                if(location) details += ` מיקום GPS: ${location}`;
+                await sendClientRequest(actionType, details);
+                orderFormModal.reset();
+                modalContainer.classList.remove('show');
+            }
+            
+            async function handleChatMessage(message) {
+                if(!message || !message.trim()) return;
+                const activeOrder = clientState.orders.find(o => o['סטטוס'] !== 'סגור');
+                const eta = activeOrder ? activeOrder['זמן הגעה משוער'] : null;
+                const driver = activeOrder ? activeOrder['שם נהג'] : null;
+                if(message === "מה צפי ההגעה של הנהג?" && (eta || driver)) {
+                     const reply = `היי ${clientState.name.split(' ')[0]}, ${driver ? `הנהג ${driver}` : 'הנהג'} בדרך. זמן ההגעה המשוער הוא ${eta || 'בקרוב'}.`;
+                     showToast(reply, 'info');
+                } else {
+                    await sendClientRequest('הודעת צאט', message);
+                }
+            }
+
+            function handleChatSubmit(e) {
+                e.preventDefault();
+                const messageInput = document.getElementById('chat-message');
+                handleChatMessage(messageInput.value);
+                messageInput.value = '';
+            }
+            
+            async function sendClientRequest(requestType, details) {
+                try {
+                    const result = await apiPost({ action: 'clientRequest', clientId: clientState.id, clientName: clientState.name, requestType, details });
+                    if (result.status === 'success') {
+                        showToast("בקשתך נשלחה בהצלחה!", "success");
+                    } else { throw new Error(result.message || 'Unknown error'); }
+                } catch (error) { showToast(`שגיאה בשליחת הבקשה: ${error.message}`, "error"); }
+            }
+
+            function handleGetLocation() {
+                if (!navigator.geolocation) {
+                    alert("שירותי מיקום אינם נתמכים בדפדפן זה.");
+                    return;
+                }
+                getLocationBtn.textContent = 'מאמת מיקום...';
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const coords = `${position.coords.latitude},${position.coords.longitude}`;
+                        document.getElementById('location-coords').value = coords;
+                        getLocationBtn.textContent = '✅ מיקום נשמר';
+                        getLocationBtn.style.backgroundColor = 'var(--success)';
+                    },
+                    () => {
+                        alert("לא ניתן היה לקבל את המיקום. אנא ודא שההרשאות מאושרות.");
+                        getLocationBtn.textContent = 'הבא אותי לכאן';
+                    }
+                );
+            }
+            
+            // ========== NOTIFICATIONS LOGIC ==========
+            
+            function initFirebasePush() {
+                try {
+                    if ('serviceWorker' in navigator && typeof firebase !== 'undefined' && firebaseConfig.apiKey) {
+                        if (!firebase.apps.length) {
+                            firebase.initializeApp(firebaseConfig);
+                        }
+                        const messaging = firebase.messaging();
+                        if (Notification.permission === 'granted') {
+                            retrieveToken(messaging);
+                        } else if (Notification.permission !== 'denied') {
+                            notificationPromptCard.style.display = 'block';
+                        }
+                    } else {
+                         console.warn("Firebase or Service Worker not supported/configured.");
+                    }
+                } catch(e) {
+                    console.error("Firebase initialization failed:", e);
+                }
+            }
+
+            async function requestNotificationPermission() {
+                try {
+                    const messaging = firebase.messaging();
+                    await messaging.requestPermission();
+                    showToast('אישור התקבל! תוכל לקבל עדכונים.', 'success');
+                    notificationPromptCard.style.display = 'none';
+                    retrieveToken(messaging);
+                } catch (error) {
+                    console.error('Unable to get permission to notify.', error);
+                    showToast('אישור נדחה. ניתן לאפשר התראות בהגדרות הדפדפן.', 'warning');
+                    notificationPromptCard.style.display = 'none';
+                }
+            }
+
+            async function retrieveToken(messaging) {
+                try {
+                    // ⭐️⭐️⭐️ הדבק כאן את ה-VAPID key שלך ⭐️⭐️⭐️
+                    const VAPID_KEY = "YOUR_VAPID_PUBLIC_KEY_HERE"; 
+                    const currentToken = await messaging.getToken({ vapidKey: VAPID_KEY });
+                    if (currentToken) {
+                        sendTokenToServer(currentToken);
+                    } else {
+                        console.log('No registration token available. Request permission to generate one.');
+                    }
+                } catch (err) {
+                    console.error('An error occurred while retrieving token. ', err);
+                }
+            }
+
+            async function sendTokenToServer(token) {
+                const storedToken = localStorage.getItem('fcm_token');
+                if (token === storedToken) return;
+
+                try {
+                    await apiPost({ action: 'saveClientToken', clientId: clientState.id, token: token });
+                    localStorage.setItem('fcm_token', token);
+                    console.log("Token sent to server successfully.");
+                } catch (error) {
+                    console.error("Error sending token to server:", error);
+                }
+            }
+
+            // ========== START APP ==========
+            initApp();
+        });
+    </script>
+</body>
+</html>
+
