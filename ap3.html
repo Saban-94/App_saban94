@@ -49,7 +49,7 @@
         .modal-content { background-color: white; padding: 25px; border-radius: var(--radius); width: 90%; max-width: 500px; animation: fadeIn 0.3s; }
         .details-row { display: none; }
         .details-row.show { display: table-row; }
-        .map-canvas { border-radius: 10px; border: 1px solid var(--border); }
+        .map-preview { border-radius: 10px; border: 1px solid var(--border); height: 150px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); font-weight: bold;}
         .container-card-details { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease-out; padding: 0; }
         .container-card.expanded .container-card-details { max-height: 500px; padding: 20px 0 10px 0; }
         .container-card .progress-bar { width: 100%; height: 8px; background-color: var(--border); border-radius: 4px; overflow: hidden; margin-top: 5px; }
@@ -69,6 +69,8 @@
         .toast.show { opacity: 1; transform: translateY(0); }
         .chat-send-feedback { text-align: center; margin-top: 15px; max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
         .chat-send-feedback.show { max-height: 50px; }
+        #chat-form { background-color: #eaf4ff; padding: 15px; border-radius: var(--radius); }
+        #chat-message { height: 90px; border-color: var(--brand); background-color: white; }
     </style>
 </head>
 <body>
@@ -79,8 +81,7 @@
             <div class="online-indicator"></div>
             <div class="logout-popup">
                 <button id="logout-btn" class="logout-btn">
-                     <!-- אייקון התנתקות - ניתן להחליף בלינק משלך -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
                     <span>התנתק</span>
                 </button>
             </div>
@@ -132,8 +133,8 @@
                 <div id="chat-templates"></div>
                  <form id="chat-form">
                      <div class="form-group">
-                        <label for="chat-message">או כתוב הודעה חופשית:</label>
-                        <textarea id="chat-message" required style="height: 80px;"></textarea>
+                        <label for="chat-message">או כתוב הודעה חופשית: 👋</label>
+                        <textarea id="chat-message" required placeholder="כתוב כאן את הודעתך..."></textarea>
                     </div>
                     <button type="submit" class="btn">שלח הודעה</button>
                  </form>
@@ -174,11 +175,11 @@
                      <h4 style="border-bottom: 2px solid var(--brand); padding-bottom: 5px; margin: 20px 0 10px 0;">סימולציות שימוש</h4>
                      <p style="font-size: 14px; margin-bottom: 5px;"><strong>כרטיס מכולה פעיל:</strong></p>
                      <!-- צלם כאן את דף הבית או דף "המכולות שלי" והדבק את הלינק לתמונה -->
-                     <img src="https://placehold.co/600x300/e2e8f0/1a202c?text=צילום+מסך+של+כרטיס+מכולה" alt="Container Card Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
+                     <img src="https://i.ibb.co/L5BKn0g/Card-Demo.png" alt="Container Card Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
                      <p style="font-size: 12px; color: var(--text-muted);">לחיצה על הכרטיס תרחיב אותו ותציג מפה ופרטים נוספים. הכפתורים מאפשרים לבצע פעולות מהירות.</p>
                      <p style="font-size: 14px; margin-top: 15px; margin-bottom: 5px;"><strong>שליחת הודעה מהירה:</strong></p>
                       <!-- צלם כאן את דף הצ'אט והדבק את הלינק לתמונה -->
-                     <img src="https://placehold.co/600x200/e2e8f0/1a202c?text=צילום+מסך+של+דף+הצ'אט" alt="Chat Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
+                     <img src="https://i.ibb.co/Y0yR9W2/Chat-Demo.png" alt="Chat Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
                      <p style="font-size: 12px; color: var(--text-muted);">בחר קטגוריה, לחץ על ההודעה הרצויה ושלח.</p>
                 </div>
             </div>
@@ -316,42 +317,49 @@
 
             // ========== 4. EVENT LISTENERS ==========
             function setupEventListeners() {
-                // Use event delegation for dynamic content
-                document.body.addEventListener('click', (e) => {
-                    const navBtn = e.target.closest('.nav-btn');
-                    if (navBtn) {
-                        navigateTo(navBtn.dataset.page);
-                        return;
-                    }
-
-                    const containerCard = e.target.closest('.container-card');
-                    if (containerCard) {
-                        handleContainerCardClick(e);
-                        return;
-                    }
-                });
+                dom.appContainer.addEventListener('click', handleAppClick);
                 
                 dom.enablePermissionsBtn.addEventListener('click', requestCorePermissions);
-                dom.chatTemplates.addEventListener('click', handleChatTemplateClick);
-                dom.chatForm.addEventListener('submit', handleChatFormSubmit);
-                dom.historyTableBody.addEventListener('click', handleHistoryRowClick);
                 dom.helpFab.addEventListener('click', () => dom.helpModal.classList.add('show'));
                 dom.helpCloseBtn.addEventListener('click', () => dom.helpModal.classList.remove('show'));
-                dom.newOrderBtn.addEventListener('click', () => openOrderModal('הזמנה חדשה'));
                 dom.profileContainer.addEventListener('click', (e) => { if(!e.target.closest('#logout-btn')) dom.profileContainer.classList.toggle('active'); });
                 dom.logoutBtn.addEventListener('click', () => { localStorage.removeItem('saban_client_id'); window.location.reload(); });
-                dom.resetHistoryFilterBtn.addEventListener('click', () => { renderHistoryTable(clientState.orders); dom.resetHistoryFilterBtn.style.display = 'none'; });
+            }
+
+            function handleAppClick(e) {
+                const navBtn = e.target.closest('.nav-btn');
+                if (navBtn) return navigateTo(navBtn.dataset.page);
+
+                const containerCard = e.target.closest('.container-card');
+                if (containerCard) return handleContainerCardClick(e, containerCard);
+                
+                const historyRow = e.target.closest('.history-data-row');
+                if(historyRow) return handleHistoryRowClick(historyRow);
+
+                const templateBtn = e.target.closest('.template-btn');
+                if(templateBtn) return handleChatTemplateClick(templateBtn);
+                
+                const newOrderBtn = e.target.closest('#new-order-btn');
+                if(newOrderBtn) return openOrderModal('הזמנה חדשה');
+
+                const resetFilterBtn = e.target.closest('#reset-history-filter-btn');
+                if(resetFilterBtn) {
+                     renderHistoryTable(clientState.orders); 
+                     resetFilterBtn.style.display = 'none';
+                }
+                
+                const chatForm = e.target.closest('#chat-form');
+                if(chatForm) {
+                    chatForm.addEventListener('submit', handleChatFormSubmit);
+                }
             }
             
-            function handleChatTemplateClick(e) {
-                const button = e.target.closest('.template-btn');
-                if (button) {
-                    const chatMessageInput = document.getElementById('chat-message');
-                    chatMessageInput.value = button.textContent;
-                    chatMessageInput.focus();
-                    const chatPage = document.getElementById('page-chat');
-                    chatPage.scrollTo({ top: chatPage.scrollHeight, behavior: 'smooth' });
-                }
+            function handleChatTemplateClick(button) {
+                const chatMessageInput = document.getElementById('chat-message');
+                chatMessageInput.value = button.textContent;
+                chatMessageInput.focus();
+                const chatPage = document.getElementById('page-chat');
+                chatPage.scrollTo({ top: chatPage.scrollHeight, behavior: 'smooth' });
             }
             
             function handleChatFormSubmit(e) {
@@ -367,9 +375,7 @@
                 }
             }
             
-            function handleContainerCardClick(e) {
-                const card = e.target.closest('.container-card');
-                if (!card) return;
+            function handleContainerCardClick(e, card) {
                 const actionButton = e.target.closest('.btn');
                 if (actionButton && actionButton.dataset.action) {
                      e.stopPropagation();
@@ -400,9 +406,7 @@
                 }
             }
 
-             function handleHistoryRowClick(e) {
-                const row = e.target.closest('.history-data-row');
-                if (!row) return;
+             function handleHistoryRowClick(row) {
                 let detailsRow = row.nextElementSibling;
                 if (detailsRow && detailsRow.classList.contains('details-row')) {
                     detailsRow.classList.toggle('show');
@@ -410,9 +414,8 @@
                     const orderData = JSON.parse(row.dataset.order);
                     const newDetailsRow = document.createElement('tr');
                     newDetailsRow.className = 'details-row show';
-                    newDetailsRow.innerHTML = `<td colspan="4" style="padding: 15px;"><canvas class="map-canvas" width="300" height="150"></canvas></td>`;
+                    newDetailsRow.innerHTML = `<td colspan="4" style="padding: 15px;"><a class="map-preview" href="https://maps.google.com/?q=${encodeURIComponent(orderData['כתובת'])}" target="_blank" style="background-image: url('https://placehold.co/600x300/eaf4ff/1a202c?text=פתח+מפה')">לחץ לפתיחת מפה</a></td>`;
                     row.after(newDetailsRow);
-                    drawLocationMap(newDetailsRow.querySelector('.map-canvas'), orderData['כתובת']);
                 }
             }
             
@@ -557,7 +560,7 @@
                     </div>
                     <div class="progress-bar"><div class="progress-bar-inner" style="width: ${progress}%;"></div></div>
                     <div class="container-card-details">
-                         <div style="padding: 15px 0;"><canvas class="map-canvas" width="300" height="150"></canvas></div>
+                         <div style="padding: 15px 0;"><a class="map-preview" href="https://maps.google.com/?q=${encodeURIComponent(order['כתובת'])}" target="_blank" style="background-image: url('https://placehold.co/600x300/eaf4ff/1a202c?text=פתח+מפה')">לחץ לפתיחת מפה</a></div>
                          <p><strong>תאריך התחלה:</strong> ${startDate.toLocaleDateString('he-IL')}</p>
                          <p><strong>תאריך סיום צפוי:</strong> ${endDate.toLocaleDateString('he-IL')}</p>
                         <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -623,23 +626,6 @@
                 dom.chatTemplates.innerHTML = html;
             }
             
-            function drawLocationMap(canvas, address) {
-                const ctx = canvas.getContext('2d');
-                const w = canvas.width, h = canvas.height;
-                ctx.clearRect(0, 0, w, h);
-                ctx.fillStyle = '#eaf4ff'; ctx.fillRect(0, 0, w, h);
-                ctx.fillStyle = '#d4e8ff';
-                ctx.fillRect(0, h * 0.4, w, h * 0.2); ctx.fillRect(w * 0.45, 0, w*0.1, h);
-                ctx.fillStyle = 'var(--danger)'; ctx.beginPath();
-                ctx.moveTo(w / 2, h / 2 - 20);
-                ctx.bezierCurveTo(w/2+20, h/2-20, w/2+20, h/2+10, w/2, h/2+10);
-                ctx.bezierCurveTo(w/2-20, h/2+10, w/2-20, h/2-20, w/2, h/2-20);
-                ctx.fill();
-                ctx.fillStyle = 'white'; ctx.beginPath();
-                ctx.arc(w/2, h/2 - 20, 4, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = 'var(--text-dark)'; ctx.font = 'bold 16px Assistant';
-                ctx.textAlign = 'center'; ctx.fillText(address, w / 2, h - 15);
-            }
             function showToast(message, type = 'info') {
                 const toast = document.createElement('div');
                 toast.className = `toast ${type}`;
