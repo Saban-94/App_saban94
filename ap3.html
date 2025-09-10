@@ -29,7 +29,7 @@
         .profile-container { position: relative; cursor: pointer; }
         .profile-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border); transition: transform 0.2s; }
         .online-indicator { position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background-color: var(--success); border-radius: 50%; border: 2px solid white; }
-        .logout-popup { position: absolute; top: 50px; left: 0; background: var(--card); border-radius: 10px; box-shadow: var(--shadow); padding: 5px; opacity: 0; visibility: hidden; transition: opacity 0.2s, transform 0.2s; transform: translateY(10px); }
+        .logout-popup { position: absolute; top: 50px; left: 0; background: var(--card); border-radius: 10px; box-shadow: var(--shadow); padding: 5px; opacity: 0; visibility: hidden; transition: opacity 0.2s, transform 0.2s; transform: translateY(10px); z-index: 10; }
         .profile-container.active .logout-popup { opacity: 1; visibility: visible; transform: translateY(0); }
         .profile-container.active .profile-avatar { transform: scale(1.1); }
         .logout-btn { background: none; border: none; padding: 8px 12px; font-weight: 600; color: var(--danger); display: flex; align-items: center; gap: 5px; cursor: pointer; }
@@ -50,7 +50,7 @@
         .details-row { display: none; }
         .details-row.show { display: table-row; }
         .map-canvas { border-radius: 10px; border: 1px solid var(--border); }
-        .container-card-details { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease-out; padding: 0 20px;}
+        .container-card-details { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease-out; padding: 0; }
         .container-card.expanded .container-card-details { max-height: 500px; padding: 20px 0 10px 0; }
         .container-card .progress-bar { width: 100%; height: 8px; background-color: var(--border); border-radius: 4px; overflow: hidden; margin-top: 5px; }
         .container-card .progress-bar-inner { height: 100%; background-color: var(--success); border-radius: 4px; transition: width 0.5s; }
@@ -79,7 +79,7 @@
             <div class="online-indicator"></div>
             <div class="logout-popup">
                 <button id="logout-btn" class="logout-btn">
-                     <!-- אייקון התנתקות -->
+                     <!-- אייקון התנתקות - ניתן להחליף בלינק משלך -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
                     <span>התנתק</span>
                 </button>
@@ -116,6 +116,7 @@
         <div id="page-history" class="page">
             <h1 class="page-title">היסטוריית הזמנות</h1>
              <div class="card">
+                <div style="margin-bottom: 10px; text-align: center;"><button id="reset-history-filter-btn" class="btn secondary" style="display:none;">הצג את כל ההזמנות</button></div>
                 <div style="margin-bottom: 20px;"><canvas id="historyChart"></canvas></div>
                 <div style="overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: right;">
@@ -146,7 +147,7 @@
 
     <nav class="bottom-nav">
         <button class="nav-btn active" data-page="page-home"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span>דף הבית</span></button>
-        <button class="nav-btn" data-page="page-containers"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg><span>המכולות שלי</span></button>
+        <button class="nav-btn" data-page="page-containers"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45-.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg><span>המכולות שלי</span></button>
         <button class="nav-btn" data-page="page-history"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg><span>היסטוריה</span></button>
         <button class="nav-btn" data-page="page-chat"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 15-3-3-3 3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"></path><path d="m3 9 3 3 3-3"></path></svg><span>צ'אט</span></button>
     </nav>
@@ -172,12 +173,12 @@
                     </ul>
                      <h4 style="border-bottom: 2px solid var(--brand); padding-bottom: 5px; margin: 20px 0 10px 0;">סימולציות שימוש</h4>
                      <p style="font-size: 14px; margin-bottom: 5px;"><strong>כרטיס מכולה פעיל:</strong></p>
-                     <!-- הדבק כאן לינק לצילום מסך של כרטיס מכולה פעיל -->
-                     <img src="https://i.ibb.co/L5BKn0g/Card-Demo.png" alt="Container Card Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
+                     <!-- צלם כאן את דף הבית או דף "המכולות שלי" והדבק את הלינק לתמונה -->
+                     <img src="https://via.placeholder.com/300x150.png?text=צילום+מסך+של+כרטיס+מכולה" alt="Container Card Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
                      <p style="font-size: 12px; color: var(--text-muted);">לחיצה על הכרטיס תרחיב אותו ותציג מפה ופרטים נוספים. הכפתורים מאפשרים לבצע פעולות מהירות.</p>
                      <p style="font-size: 14px; margin-top: 15px; margin-bottom: 5px;"><strong>שליחת הודעה מהירה:</strong></p>
-                      <!-- הדבק כאן לינק לצילום מסך של דף הצ'אט -->
-                     <img src="https://i.ibb.co/Y0yR9W2/Chat-Demo.png" alt="Chat Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
+                      <!-- צלם כאן את דף הצ'אט והדבק את הלינק לתמונה -->
+                     <img src="https://via.placeholder.com/300x100.png?text=צילום+מסך+של+דף+הצ'אט" alt="Chat Demo" style="width: 100%; border-radius: 10px; border: 1px solid var(--border);">
                      <p style="font-size: 12px; color: var(--text-muted);">בחר קטגוריה, לחץ על ההודעה הרצויה ושלח.</p>
                 </div>
             </div>
@@ -209,6 +210,7 @@
                 containersList: document.getElementById('containers-list'),
                 historyChartCanvas: document.getElementById('historyChart'),
                 historyTableBody: document.getElementById('history-table-body'),
+                resetHistoryFilterBtn: document.getElementById('reset-history-filter-btn'),
                 chatTemplates: document.getElementById('chat-templates'), chatForm: document.getElementById('chat-form'),
                 modalContainer: document.getElementById('modal-container'),
                 helpFab: document.getElementById('help-fab'), helpModal: document.getElementById('help-modal'), helpCloseBtn: document.getElementById('help-close-btn'),
@@ -234,8 +236,13 @@
                     if (data.status === 'error' || !data.clientName) throw new Error(data.message || "Client not found");
                     clientState = { id: data.clientId, name: data.clientName, avatar: data.avatarUrl, orders: data.orders || [], addresses: new Set(data.orders.map(o => o['כתובת']).filter(Boolean)), historyChart: clientState.historyChart };
                     localStorage.setItem('saban_client_id', data.clientId);
-                    if (!isRefresh) renderAllPages();
-                    else { renderHeaderAndGreeting(); renderHomePage(); renderContainersPage(); }
+                    if (!isRefresh) {
+                        renderAllPages();
+                    } else { 
+                        renderHeaderAndGreeting(); 
+                        renderHomePage(); 
+                        renderContainersPage(); 
+                    }
                 } catch (error) {
                     console.error("Failed to load client data:", error);
                     localStorage.removeItem('saban_client_id');
@@ -259,10 +266,53 @@
             const randomColor = () => `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`;
 
             // ========== 3. PERMISSIONS & NOTIFICATIONS ==========
-            function initFirebasePush() { /* ... unchanged ... */ }
-            async function requestCorePermissions() { /* ... unchanged ... */ }
-            async function retrieveToken(messaging) { /* ... unchanged ... */ }
-            async function sendTokenToServer(token) { /* ... unchanged ... */ }
+            function initFirebasePush() {
+                try {
+                    if ('serviceWorker' in navigator && typeof firebase !== 'undefined' && firebaseConfig.apiKey) {
+                        navigator.serviceWorker.register('firebase-messaging-sw.js')
+                            .then(registration => {
+                                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                                const messaging = firebase.messaging();
+                                messaging.onMessage(payload => showToast(`${payload.notification.title}: ${payload.notification.body}`));
+                                if (Notification.permission === 'granted') {
+                                    dom.permissionCard.style.display = 'none';
+                                    retrieveToken(messaging);
+                                } else if (Notification.permission !== 'denied') {
+                                    dom.permissionCard.style.display = 'block';
+                                }
+                            }).catch(err => console.error('SW registration failed: ', err));
+                    }
+                } catch (e) { console.error("Firebase init failed:", e); }
+            }
+            async function requestCorePermissions() {
+                dom.permissionCard.style.display = 'none';
+                try {
+                    const messaging = firebase.messaging();
+                    await messaging.requestPermission();
+                    showToast('אישור התראות התקבל!');
+                    retrieveToken(messaging);
+                    if ("geolocation" in navigator) {
+                        navigator.geolocation.getCurrentPosition(
+                            () => showToast("אישור מיקום התקבל."),
+                            () => showToast("אישור מיקום נדחה. תוכל לאפשר זאת בהגדרות הדפדפן.", 'warning')
+                        );
+                    }
+                } catch (error) { showToast('בקשת ההרשאות נכשלה. נסה שוב דרך הגדרות הדפדפן.', 'error'); }
+            }
+            async function retrieveToken(messaging) {
+                try {
+                    const VAPID_KEY = "BD74H8MAwIVd-5-yJe9DS652Bl332JUnY-tW6CpSGFo-aFf2m1iX52YQcxpWJ4sV61s3mSwqGn83nHihHIoQ1TM";
+                    const currentToken = await messaging.getToken({ vapidKey: VAPID_KEY });
+                    if (currentToken) sendTokenToServer(currentToken);
+                } catch (err) { console.error('Could not get token: ', err); }
+            }
+            async function sendTokenToServer(token) {
+                if (token === localStorage.getItem('fcm_token') || !clientState.id) return;
+                try {
+                    await apiPost({ action: 'saveClientToken', clientId: clientState.id, token: token });
+                    localStorage.setItem('fcm_token', token);
+                } catch (error) { console.error("Error sending token to server:", error); }
+            }
 
             // ========== 4. EVENT LISTENERS ==========
             function setupEventListeners() {
@@ -276,15 +326,18 @@
                 dom.helpFab.addEventListener('click', () => dom.helpModal.classList.add('show'));
                 dom.helpCloseBtn.addEventListener('click', () => dom.helpModal.classList.remove('show'));
                 dom.newOrderBtn.addEventListener('click', () => openOrderModal('הזמנה חדשה'));
-                dom.profileContainer.addEventListener('click', () => dom.profileContainer.classList.toggle('active'));
+                dom.profileContainer.addEventListener('click', (e) => { if(e.target.id !== 'logout-btn') dom.profileContainer.classList.toggle('active'); });
                 dom.logoutBtn.addEventListener('click', () => { localStorage.removeItem('saban_client_id'); window.location.reload(); });
+                dom.resetHistoryFilterBtn.addEventListener('click', () => { renderHistoryTable(clientState.orders); dom.resetHistoryFilterBtn.style.display = 'none'; });
             }
             
             function handleChatTemplateClick(e) {
                 const button = e.target.closest('.template-btn');
                 if (button) {
-                    document.getElementById('chat-message').value = button.textContent;
-                    dom.appContainer.querySelector('#page-chat').scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    const chatMessageInput = document.getElementById('chat-message');
+                    chatMessageInput.value = button.textContent;
+                    chatMessageInput.focus();
+                    dom.appContainer.querySelector('#page-chat').scrollTo({ top: dom.appContainer.querySelector('#page-chat').scrollHeight, behavior: 'smooth' });
                 }
             }
             
@@ -306,6 +359,7 @@
                 if (!card) return;
                 const actionButton = e.target.closest('.btn');
                 if (actionButton && actionButton.dataset.action) {
+                     e.stopPropagation(); // Prevent card from toggling when a button is clicked
                      const order = clientState.orders.find(o => o['מספר תעודה'] == actionButton.dataset.orderId);
                      if (order) openOrderModal(actionButton.dataset.action, order);
                 } else {
@@ -319,7 +373,8 @@
             }
             
             function handleHistoryChartClick(event) {
-                const points = clientState.historyChart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+                if (!clientState.historyChart) return;
+                const points = clientState.historyChart.getElementsAtEventForMode(event, 'native', { intersect: true }, true);
                 if (points.length) {
                     const index = points[0].index;
                     const month = clientState.historyChart.data.labels[index];
@@ -328,6 +383,7 @@
                         return orderDate && orderDate.toLocaleDateString('he-IL', { year: '2-digit', month: 'short' }) === month;
                     });
                     renderHistoryTable(filteredOrders);
+                    dom.resetHistoryFilterBtn.style.display = 'inline-block';
                 }
             }
 
@@ -354,7 +410,52 @@
                 } catch (error) { showToast(`שגיאה בשליחת הבקשה: ${error.message}`, 'error'); }
             }
             
-            function openOrderModal(actionType, order) { /* ... unchanged ... */ }
+            function openOrderModal(actionType, order) {
+                 const isNewOrder = !order;
+                 let title = isNewOrder ? "הזמנת מכולה חדשה" : `בקשת ${actionType}`;
+                 let addressContent = isNewOrder ? 
+                    `<div class="form-group"><label for="address-select">בחר כתובת או הקלד חדשה</label><select id="address-select"><option value="">-- בחר כתובת --</option>${Array.from(clientState.addresses).map(a => `<option value="${a}">${a}</option>`).join('')}<option value="new">כתובת חדשה...</option></select></div><div class="form-group" id="new-address-group" style="display:none;"><input type="text" id="new-address" placeholder="עיר, רחוב, מספר בית"></div>` :
+                    `<p style="margin-bottom: 20px;">עבור מכולה בכתובת: <strong>${order['כתובת']}</strong></p>`;
+
+                 dom.modalContainer.innerHTML = `
+                    <div class="modal-content">
+                        <h3 style="margin-bottom: 20px;">${title}</h3>
+                        ${addressContent}
+                        <form id="order-request-form">
+                             <div class="form-group">
+                                <label for="order-notes">הערות</label>
+                                <textarea id="order-notes" placeholder="לדוגמה: נא לתאם הגעה טלפונית..."></textarea>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" class="btn secondary" id="close-modal-btn" style="flex:1;">ביטול</button>
+                                <button type="submit" class="btn" style="flex:2;">שלח בקשה</button>
+                            </div>
+                        </form>
+                    </div>`;
+                dom.modalContainer.classList.add('show');
+                
+                if (isNewOrder) {
+                    const addressSelect = document.getElementById('address-select');
+                    addressSelect.onchange = () => { document.getElementById('new-address-group').style.display = addressSelect.value === 'new' ? 'block' : 'none'; };
+                }
+
+                document.getElementById('close-modal-btn').onclick = () => dom.modalContainer.classList.remove('show');
+                document.getElementById('order-request-form').onsubmit = (e) => {
+                    e.preventDefault();
+                    let details, address;
+                    const notes = document.getElementById('order-notes').value;
+                    if(isNewOrder) {
+                        const newAddress = document.getElementById('new-address').value.trim();
+                        address = newAddress || document.getElementById('address-select').value;
+                        if (!address || address === 'new') { showToast('אנא בחר או הקלד כתובת.', 'error'); return; }
+                        details = `כתובת: ${address}. הערות: ${notes || 'אין'}`;
+                    } else {
+                        details = `מכולה קיימת: ${order['מספר תעודה']}. כתובת: ${order['כתובת']}. הערות: ${notes || 'אין'}`;
+                    }
+                    sendClientRequest(actionType, details);
+                    dom.modalContainer.classList.remove('show');
+                };
+            }
 
             // ========== 5. UI RENDERING ==========
             function renderAllPages() {
@@ -367,13 +468,23 @@
                 renderChatPage();
             }
 
-            function navigateTo(pageId) { /* ... unchanged ... */ }
-            function updateClock() { /* ... unchanged ... */ }
+            function navigateTo(pageId) {
+                dom.pages.forEach(p => p.classList.remove('active'));
+                document.getElementById(pageId)?.classList.add('active');
+                dom.navButtons.forEach(b => b.classList.remove('active'));
+                document.querySelector(`.nav-btn[data-page="${pageId}"]`)?.classList.add('active');
+            }
+            function updateClock() {
+                const now = new Date();
+                dom.clock.textContent = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+                dom.date.textContent = now.toLocaleDateString('he-IL', { weekday: 'long', day: '2-digit', month: '2-digit' });
+            }
 
             function renderHeaderAndGreeting() {
                 if(!clientState.name) return;
                 dom.clientNameHeader.textContent = clientState.name;
-                dom.profileAvatar.src = clientState.avatar || `https://placehold.co/80x80/EFEFEF/333333?text=${clientState.name.charAt(0)}`;
+                // הדבק כאן לינק לתמונת פרופיל מהגיליון שלך
+                dom.profileAvatar.src = clientState.avatar || `https://placehold.co/80x80/0b72b9/FFFFFF?text=${clientState.name.charAt(0)}`;
                 const hour = new Date().getHours();
                 let greeting = (hour < 12) ? "בוקר טוב," : (hour < 18) ? "צהריים טובים," : "ערב טוב,";
                 dom.greeting.textContent = `${greeting} ${clientState.name.split(' ')[0]}`;
@@ -381,13 +492,13 @@
 
             function renderHomePage() {
                 const activeOnSite = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && o['מכולה ירדה']);
-                dom.activeOrdersContainer.innerHTML = activeOnSite.length > 0 ? activeOnSite.map(createContainerCardHTML).join('') : '<p style="text-align:center; color: var(--text-muted);">אין כרגע מכולות בשטח.</p>';
+                dom.activeOrdersContainer.innerHTML = activeOnSite.length > 0 ? activeOnSite.map(createContainerCardHTML).join('') : '';
                 
                 const upcomingOrders = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && !o['מכולה ירדה']);
                 if (upcomingOrders.length > 0) {
                     dom.etaCardContainer.style.display = 'block';
                     const mainOrder = upcomingOrders[0];
-                    const eta = parseDate(mainOrder['זמן הגעה משוער']);
+                    const eta = mainOrder['זמן הגעה משוער'] ? parseDate(mainOrder['זמן הגעה משוער']) : null;
                     const driver = mainOrder['שם נהג'];
                     let etaHTML = `<div class="card"><div>צפי הגעה</div><div style="font-weight: 700;">טרם עודכן</div></div>`;
                     if (eta || driver) {
@@ -403,11 +514,7 @@
 
              function renderContainersPage() {
                 const activeOrders = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && o['מכולה ירדה']);
-                if (activeOrders.length === 0) {
-                    dom.containersList.innerHTML = `<div class="card" style="text-align: center;"><p>אין לך מכולות פעילות כרגע.</p></div>`;
-                    return;
-                }
-                dom.containersList.innerHTML = activeOrders.map(createContainerCardHTML).join('');
+                dom.containersList.innerHTML = activeOrders.length > 0 ? activeOrders.map(createContainerCardHTML).join('') : `<div class="card" style="text-align: center;"><p>אין לך מכולות פעילות כרגע.</p></div>`;
             }
             
             function createContainerCardHTML(order) {
@@ -447,7 +554,6 @@
             }
 
             function renderHistoryPage() {
-                renderHistoryTable(clientState.orders);
                 if(clientState.historyChart) clientState.historyChart.destroy();
                 const monthlyData = clientState.orders.reduce((acc, order) => {
                     const date = parseDate(order['תאריך הזמנה']);
@@ -471,6 +577,7 @@
                         onClick: handleHistoryChartClick
                     } 
                 });
+                renderHistoryTable(clientState.orders);
             }
             
             function renderHistoryTable(orders) {
@@ -496,13 +603,39 @@
                 let html = '';
                 for (const category in templates) {
                     html += `<p style="font-weight: 600; margin-top: 15px; margin-bottom: 5px;">${category}</p>`;
-                    html += templates[category].map(t => `<button class="btn secondary template-btn">${t}</button>`).join('');
+                    html += templates[category].map(t => `<button class="btn secondary template-btn" style="width: 100%; justify-content: flex-start; text-align: right; margin-bottom: 5px;">${t}</button>`).join('');
                 }
                 dom.chatTemplates.innerHTML = html;
             }
             
-            function drawLocationMap(canvas, address) { /* ... unchanged ... */ }
-            function showToast(message, type = 'info') { /* ... unchanged ... */ }
+            function drawLocationMap(canvas, address) {
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+                ctx.fillStyle = '#eaf4ff'; ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = '#d4e8ff';
+                ctx.fillRect(0, h * 0.4, w, h * 0.2); ctx.fillRect(w * 0.45, 0, w*0.1, h);
+                ctx.fillStyle = 'var(--danger)'; ctx.beginPath();
+                ctx.moveTo(w / 2, h / 2 - 20);
+                ctx.bezierCurveTo(w/2+20, h/2-20, w/2+20, h/2+10, w/2, h/2+10);
+                ctx.bezierCurveTo(w/2-20, h/2+10, w/2-20, h/2-20, w/2, h/2-20);
+                ctx.fill();
+                ctx.fillStyle = 'white'; ctx.beginPath();
+                ctx.arc(w/2, h/2 - 20, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = 'var(--text-dark)'; ctx.font = 'bold 16px Assistant';
+                ctx.textAlign = 'center'; ctx.fillText(address, w / 2, h - 15);
+            }
+            function showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                dom.toastContainer.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 100);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.addEventListener('transitionend', () => toast.remove());
+                }, 3000);
+            }
             
             // ========== 6. START APP ==========
             initApp();
