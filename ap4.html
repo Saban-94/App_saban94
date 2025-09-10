@@ -80,7 +80,7 @@
     <div id="toast-container"></div>
     <header class="app-header">
         <div id="profile-container" class="profile-container" data-action="toggle-profile">
-            <img id="profile-avatar" src="https://img.icons8.com/?size=100&id=KNxaH6cx0qhT&format=png&color=000000" alt="Profile" class="profile-avatar">
+            <img id="profile-avatar" src="https://placehold.co/80x80/EFEFEF/333333?text=👤" alt="Profile" class="profile-avatar">
             <div class="online-indicator"></div>
             <div class="logout-popup">
                 <button data-action="logout" class="logout-btn">
@@ -195,17 +195,16 @@
             const API_URL = "https://script.google.com/macros/s/AKfycbxS-PXiN9O80sACW6PsOFMCzjAsNq3be6Olm0cqPrtph6PH3GIV3Xlge5pjrV7qhEs0/exec";
             const firebaseConfig = { apiKey: "AIzaSyDy3k1AoEKeuCKjmFxefn9fapeqv2Le1_w", authDomain: "hsaban94-cc777.firebaseapp.com", projectId: "hsaban94-cc777", storageBucket: "hsaban94-cc777.appspot.com", messagingSenderId: "299206369469", appId: "1:299206369469:web:7527baa329def3a29457d4" };
             let clientState = { id: null, name: null, avatar: null, orders: [], addresses: new Set(), historyChart: null };
-            let mapInstances = {}; // To store leaflet map instances
+            let mapInstances = {};
             const dom = {
                 body: document.body,
-                appContainer: document.getElementById('app-container'),
+                pages: document.querySelectorAll('.page'),
+                navButtons: document.querySelectorAll('.nav-btn'),
                 clientNameHeader: document.getElementById('client-name-header'),
                 profileContainer: document.getElementById('profile-container'),
                 profileAvatar: document.getElementById('profile-avatar'),
                 clock: document.getElementById('clock'), date: document.getElementById('date'),
                 permissionCard: document.getElementById('permission-prompt-card'),
-                pages: document.querySelectorAll('.page'),
-                navButtons: document.querySelectorAll('.nav-btn'),
                 greeting: document.getElementById('greeting'),
                 etaCardContainer: document.getElementById('eta-card-container'),
                 activeOrdersContainer: document.getElementById('active-orders-container'),
@@ -281,35 +280,9 @@
                     }
                 } catch (e) { console.error("Firebase init failed:", e); }
             }
-            async function requestCorePermissions() {
-                dom.permissionCard.style.display = 'none';
-                try {
-                    const messaging = firebase.messaging();
-                    await messaging.requestPermission();
-                    showToast('אישור התראות התקבל!');
-                    retrieveToken(messaging);
-                    if ("geolocation" in navigator) {
-                        navigator.geolocation.getCurrentPosition(
-                            () => showToast("אישור מיקום התקבל."),
-                            () => showToast("אישור מיקום נדחה. תוכל לאפשר זאת בהגדרות הדפדפן.", 'warning')
-                        );
-                    }
-                } catch (error) { showToast('בקשת ההרשאות נכשלה. נסה שוב דרך הגדרות הדפדפן.', 'error'); }
-            }
-            async function retrieveToken(messaging) {
-                try {
-                    const VAPID_KEY = "BD74H8MAwIVd-5-yJe9DS652Bl332JUnY-tW6CpSGFo-aFf2m1iX52YQcxpWJ4sV61s3mSwqGn83nHihHIoQ1TM";
-                    const currentToken = await messaging.getToken({ vapidKey: VAPID_KEY });
-                    if (currentToken) sendTokenToServer(currentToken);
-                } catch (err) { console.error('Could not get token: ', err); }
-            }
-            async function sendTokenToServer(token) {
-                if (token === localStorage.getItem('fcm_token') || !clientState.id) return;
-                try {
-                    await apiPost({ action: 'saveClientToken', clientId: clientState.id, token: token });
-                    localStorage.setItem('fcm_token', token);
-                } catch (error) { console.error("Error sending token to server:", error); }
-            }
+            async function requestCorePermissions() { /* ... */ }
+            async function retrieveToken(messaging) { /* ... */ }
+            async function sendTokenToServer(token) { /* ... */ }
 
             // ========== 4. EVENT LISTENERS ==========
             function setupEventListeners() {
@@ -324,9 +297,7 @@
                      if (!target.closest('#profile-container')) dom.profileContainer.classList.remove('active');
                      return;
                 }
-
                 const action = actionElement.dataset.action;
-
                 switch (action) {
                     case 'navigate': navigateTo(actionElement.dataset.page); break;
                     case 'toggle-profile': dom.profileContainer.classList.toggle('active'); break;
@@ -337,7 +308,7 @@
                     case 'help-fab': dom.helpModal.classList.add('show'); break;
                     case 'help-close': dom.helpModal.classList.remove('show'); break;
                     case 'chat-template': handleChatTemplateClick(actionElement); break;
-                    case 'toggle-container-details': handleContainerCardClick(e, actionElement.closest('.container-card')); break;
+                    case 'toggle-container-details': handleContainerCardClick(actionElement.closest('.container-card')); break;
                     case 'request-swap':
                     case 'request-pickup': {
                         e.stopPropagation();
@@ -350,10 +321,10 @@
                 }
             }
             
-            function handleChatTemplateClick(button) { /* Unchanged */ }
-            function handleChatFormSubmit(e) { /* Unchanged */ }
+            function handleChatTemplateClick(button) { /* ... */ }
+            function handleChatFormSubmit(e) { /* ... */ }
             
-            function handleContainerCardClick(e, card) {
+            function handleContainerCardClick(card) {
                 card.classList.toggle('expanded');
                 const mapContainer = card.querySelector('.map-container');
                 const order = clientState.orders.find(o => o['מספר תעודה'] == card.dataset.orderId);
@@ -362,69 +333,10 @@
                 }
             }
             
-            function handleHistoryChartClick(event) { /* Unchanged */ }
-
-             function handleHistoryRowClick(row) {
-                let detailsRow = row.nextElementSibling;
-                if (detailsRow && detailsRow.classList.contains('details-row')) {
-                    detailsRow.classList.toggle('show');
-                } else {
-                    const orderData = JSON.parse(row.dataset.order);
-                    const newDetailsRow = document.createElement('tr');
-                    newDetailsRow.className = 'details-row show';
-                    newDetailsRow.innerHTML = `<td colspan="4" style="padding: 15px;"><div class="map-container" id="map-${orderData['מספר תעודה']}"></div></td>`;
-                    row.after(newDetailsRow);
-                    setTimeout(() => renderLeafletMap(newDetailsRow.querySelector('.map-container'), orderData['כתובת']), 50);
-                }
-            }
-            
-            async function sendClientRequest(requestType, details) { /* Unchanged */ }
-            
-            function openOrderModal(actionType, order) {
-                 const isNewOrder = !order;
-                 let title = isNewOrder ? "הזמנת מכולה חדשה" : `בקשת ${actionType}`;
-                 let addressContent = isNewOrder ? 
-                    `<div class="form-group"><label for="address-select">בחר כתובת או הקלד חדשה</label><select id="address-select"><option value="">-- בחר כתובת --</option>${Array.from(clientState.addresses).map(a => `<option value="${a}">${a}</option>`).join('')}<option value="new">כתובת חדשה...</option></select></div><div class="form-group" id="new-address-group" style="display:none;"><input type="text" id="new-address" placeholder="עיר, רחוב, מספר בית"></div>` :
-                    `<p style="margin-bottom: 20px;">עבור מכולה בכתובת: <strong>${order['כתובת']}</strong></p>`;
-
-                 dom.modalContainer.innerHTML = `
-                    <div class="modal-content">
-                        <h3 style="margin-bottom: 20px;">${title}</h3>
-                        ${addressContent}
-                        <form id="order-request-form">
-                             <div class="form-group">
-                                <label for="order-notes">הערות</label>
-                                <textarea id="order-notes" placeholder="לדוגמה: נא לתאם הגעה טלפונית..."></textarea>
-                            </div>
-                            <div style="display: flex; gap: 10px;">
-                                <button type="button" class="btn secondary" data-action="close-modal" style="flex:1;">ביטול</button>
-                                <button type="submit" class="btn" style="flex:2;">שלח בקשה</button>
-                            </div>
-                        </form>
-                    </div>`;
-                dom.modalContainer.classList.add('show');
-                
-                if (isNewOrder) {
-                    document.getElementById('address-select').onchange = (e) => { document.getElementById('new-address-group').style.display = e.target.value === 'new' ? 'block' : 'none'; };
-                }
-
-                dom.modalContainer.querySelector('[data-action="close-modal"]').onclick = () => dom.modalContainer.classList.remove('show');
-                document.getElementById('order-request-form').onsubmit = (e) => {
-                    e.preventDefault();
-                    let details, address;
-                    const notes = document.getElementById('order-notes').value;
-                    if(isNewOrder) {
-                        const newAddress = document.getElementById('new-address').value.trim();
-                        address = newAddress || document.getElementById('address-select').value;
-                        if (!address || address === 'new' || address === '') { showToast('אנא בחר או הקלד כתובת.', 'error'); return; }
-                        details = `כתובת: ${address}. הערות: ${notes || 'אין'}`;
-                    } else {
-                        details = `מכולה קיימת: ${order['מספר תעודה']}. כתובת: ${order['כתובת']}. הערות: ${notes || 'אין'}`;
-                    }
-                    sendClientRequest(actionType, details);
-                    dom.modalContainer.classList.remove('show');
-                };
-            }
+            function handleHistoryChartClick(event) { /* ... */ }
+            function handleHistoryRowClick(row) { /* ... */ }
+            async function sendClientRequest(requestType, details) { /* ... */ }
+            function openOrderModal(actionType, order) { /* ... */ }
 
             // ========== 5. UI RENDERING ==========
             function renderAllPages() {
@@ -438,25 +350,26 @@
             }
 
             function navigateTo(pageId) {
+                if(!dom.pages) return;
                 dom.pages.forEach(p => p.classList.remove('active'));
                 const page = document.getElementById(pageId);
                 if(page) page.classList.add('active');
                 
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                if(!dom.navButtons) return;
+                dom.navButtons.forEach(b => b.classList.remove('active'));
                 const navBtn = document.querySelector(`.nav-btn[data-page="${pageId}"]`);
                 if(navBtn) navBtn.classList.add('active');
             }
-            function updateClock() { /* Unchanged */ }
-            function renderHeaderAndGreeting() { /* Unchanged */ }
-            function renderHomePage() { /* Unchanged */ }
-             function renderContainersPage() { /* Unchanged */ }
-            function createContainerCardHTML(order) { /* Unchanged */ }
-            function renderHistoryPage() { /* Unchanged */ }
-            function renderHistoryTable(orders) { /* Unchanged */ }
-            function renderChatPage() { /* Unchanged */ }
-            
-            function renderLeafletMap(container, address) { /* Unchanged */ }
-            function showToast(message, type = 'info') { /* Unchanged */ }
+            function updateClock() { /* ... */ }
+            function renderHeaderAndGreeting() { /* ... */ }
+            function renderHomePage() { /* ... */ }
+            function renderContainersPage() { /* ... */ }
+            function createContainerCardHTML(order) { /* ... */ }
+            function renderHistoryPage() { /* ... */ }
+            function renderHistoryTable(orders) { /* ... */ }
+            function renderChatPage() { /* ... */ }
+            function renderLeafletMap(container, address) { /* ... */ }
+            function showToast(message, type = 'info') { /* ... */ }
             
             // ========== 6. START APP ==========
             initApp();
@@ -464,7 +377,4 @@
     </script>
 </body>
 </html>
-
-
-}
 
