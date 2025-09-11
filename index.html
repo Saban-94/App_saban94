@@ -4,644 +4,641 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>אזור אישי - ח.סבן</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <meta name="theme-color" content="#ffffff"/>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/2SbDgD1B/1.png">
+    <link rel="icon" href="https://i.postimg.cc/2SbDgD1B/1.png">
+
+    <!-- Fonts and Libraries -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- ⭐️⭐️⭐️ FIREBASE SDKs - REQUIRED FOR NOTIFICATIONS ⭐️⭐️⭐️ -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <style>
         :root {
-            --brand: #0b72b9;
-            --accent: #ff9f1c;
-            --bg: #f0f2f5;
-            --card: #ffffff;
-            --text-dark: #1a202c;
-            --text-light: #4a5568;
-            --text-muted: #718096;
-            --border: #e2e8f0;
-            --success: #38a169;
-            --warning: #dd6b20;
-            --danger: #e53e3e;
-            --radius: 16px;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --brand: #0b72b9; --accent: #ff9f1c; --bg: #f0f2f5; --card: #ffffff;
+            --text-dark: #1a202c; --text-light: #4a5568; --text-muted: #718096;
+            --border: #e2e8f0; --success: #38a169; --warning: #dd6b20; --danger: #e53e3e;
+            --radius: 16px; --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --page-transition-duration: 0.4s;
         }
 
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes logoPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes subtle-pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(11, 114, 185, 0.3); } 70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(11, 114, 185, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(11, 114, 185, 0); } }
+        @keyframes overdue-pulse { 0% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.4); } 70% { box-shadow: 0 0 0 12px rgba(229, 62, 62, 0); } 100% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); } }
+        @keyframes truck-drive { 0% { transform: translateX(20px); } 100% { transform: translateX(-20px); } }
+        @keyframes siren-blink { 0%, 100% { background-color: #ffc107; box-shadow: 0 0 5px #ffc107; } 50% { background-color: #ff9800; box-shadow: 0 0 15px #ff9800; } }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { height: 100%; overflow: hidden; background-color: var(--bg); }
-        body { font-family: 'Assistant', sans-serif; color: var(--text-dark); display: flex; flex-direction: column; overscroll-behavior-y: contain; }
+        body { font-family: 'Assistant', sans-serif; color: var(--text-dark); display: flex; flex-direction: column; overscroll-behavior-y: contain; visibility: hidden; }
+        body.loaded { visibility: visible; }
 
-        .app-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background-color: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .header-profile { display: flex; align-items: center; gap: 10px; }
-        .header-profile img { width: 32px; height: 32px; border-radius: 50%; }
-        .header-profile-name { font-weight: 700; font-size: 16px; }
-        .header-time { text-align: center; font-weight: 600; }
-        .header-time .date { font-size: 12px; color: var(--text-muted); }
-        .header-status { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
-        .online-dot { width: 10px; height: 10px; background-color: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
-
+        .app-shell { display: flex; flex-direction: column; height: 100%; }
+        .app-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background-color: var(--card); border-bottom: 1px solid var(--border); position: relative; z-index: 10; }
         .app-container { flex-grow: 1; overflow: hidden; position: relative; }
-        .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; padding: 20px 15px 120px 15px; -webkit-overflow-scrolling: touch; background-color: var(--bg); visibility: hidden; opacity: 0; transform: translateX(100%); }
-        .page.active { visibility: visible; opacity: 1; transform: translateX(0); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s; }
-        .page.exiting { transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s; }
+        .bottom-nav { flex-shrink: 0; position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background-color: var(--card); display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
 
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background-color: var(--card); display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); border-top: 1px solid var(--border); z-index: 1000; }
-        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.2s ease-in-out; }
-        .nav-btn.active { color: var(--brand); background-color: #f8faff; }
-        .nav-btn:active { transform: scale(0.95); background-color: rgba(11, 114, 185, 0.1); }
-        .nav-btn svg { width: 28px; height: 28px; }
+        .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; padding: 20px 15px 120px 15px; background-color: var(--bg); visibility: hidden; opacity: 0; transition: transform var(--page-transition-duration) ease, opacity var(--page-transition-duration) ease; }
+        .page.active { visibility: visible; opacity: 1; transform: translateX(0); z-index: 5;}
+        .page.exit-to-left { transform: translateX(-30px); opacity: 0; }
+        .page.exit-to-right { transform: translateX(30px); opacity: 0; }
+        .page.enter-from-left { transform: translateX(-30px); }
+        .page.enter-from-right { transform: translateX(30px); }
+        .page-title { font-size: 28px; font-weight: 700; margin-bottom: 20px; animation: fadeIn 0.5s ease-out forwards; }
         
-        .card { background-color: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); animation: fadeIn 0.5s ease-out forwards; }
-        .page-title { font-size: 28px; font-weight: 700; color: var(--text-dark); margin-bottom: 20px; }
-        .btn { background: var(--brand); color: white; border: none; padding: 14px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 16px; width: 100%; transition: all 0.2s ease-in-out; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn.secondary { background-color: #eef2f7; color: var(--text-dark); }
-        .btn:active { transform: scale(0.98); }
+        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 14px; border: none; background: transparent; cursor: pointer; transition: color 0.2s, transform 0.2s;}
+        .nav-btn.active { color: var(--brand); }
+        .nav-btn:active svg { transform: scale(1.2); }
+        .nav-btn svg { width: 28px; height: 28px; pointer-events: none; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
-        .eta-card { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-radius: var(--radius); background-color: #f8faff; border: 1px solid var(--border); }
-        .eta-card.active { background: linear-gradient(135deg, #e6f7ff, #e0f2f1); }
-        .eta-card.active .eta-label { color: var(--brand); }
-        .eta-info .label { font-size: 14px; color: var(--text-muted); }
-        .eta-info .value { font-size: 18px; font-weight: 700; }
-        .eta-truck { font-size: 32px; animation: pulse 2s infinite ease-in-out; }
-
-        .progress-bar { width: 100%; height: 12px; background-color: #e0e0e0; border-radius: 6px; overflow: hidden; margin-top: 5px; }
-        .progress-bar-inner { height: 100%; background: linear-gradient(90deg, var(--success), #a5d6a7); border-radius: 6px; transition: width 0.5s ease; animation: neon-blink 2s infinite alternate; }
-        .progress-bar.warning .progress-bar-inner { background: linear-gradient(90deg, var(--warning), #ffcc80); }
-        .progress-bar.danger .progress-bar-inner { background: linear-gradient(90deg, var(--danger), #ef9a9a); }
-
-        .history-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .history-table th, .history-table td { padding: 10px; border-bottom: 1px solid var(--border); text-align: right; }
-        .history-table th { font-weight: 700; }
-
-        .chat-templates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .template-btn { background-color: #f8faff; border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: right; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; }
-        .template-btn:hover { border-color: var(--brand); color: var(--brand); }
+        .card { background-color: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); animation: popIn 0.5s ease-out forwards; overflow: hidden; }
+        .btn { background: var(--brand); color: white; border: none; padding: 12px 18px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+        .btn:active { transform: scale(0.95); }
+        .btn.secondary { background-color: var(--bg); color: var(--text-dark); border: 1px solid var(--border); }
         
-        .fab-container { position: fixed; bottom: 100px; left: 20px; z-index: 1000; }
-        .fab { width: 60px; height: 60px; border-radius: 50%; background-color: var(--brand); color: white; border: none; box-shadow: 0 8px 20px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
-        .fab.active { transform: rotate(135deg); }
-        .fab-actions { position: absolute; bottom: 75px; left: 5px; display: flex; flex-direction: column; gap: 15px; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
-        .fab-container.active .fab-actions { opacity: 1; visibility: visible; }
-        .fab-action { display: flex; align-items: center; gap: 12px; color: var(--text-dark); text-decoration: none; transform: translateY(20px); transition: all 0.3s ease; }
-        .fab-container.active .fab-action { transform: translateY(0); }
-        .fab-action .label { background-color: var(--card); padding: 6px 12px; border-radius: 8px; box-shadow: var(--shadow); font-weight: 600; white-space: nowrap; }
-        .fab-action .icon { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-        .fab-action .icon.download { background-color: var(--success); }
-        .fab-action .icon.swap { background-color: var(--accent); }
-        .fab-action .icon.pickup { background-color: var(--danger); }
-        
-        .scroll-to-top { position: fixed; bottom: 100px; right: 20px; width: 45px; height: 45px; border-radius: 50%; background-color: rgba(0,0,0,0.4); color: white; border: none; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 999; opacity: 0; transition: opacity 0.3s, transform 0.3s; }
-        .scroll-to-top.show { display: flex; opacity: 1; }
-        
-         .modal-overlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; visibility: hidden; transition: opacity 0.3s; backdrop-filter: blur(5px); }
         .modal-overlay.show { opacity: 1; visibility: visible; }
-        .modal-content { background-color: white; padding: 25px; border-radius: var(--radius); width: 90%; max-width: 500px; position: relative; transform: scale(0.95); transition: transform 0.3s; }
-        .modal-overlay.show .modal-content { transform: scale(1); }
-        .modal-close { position: absolute; top: 10px; left: 15px; background: none; border: none; font-size: 1.8rem; cursor: pointer; color: var(--text-muted); }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--brand); }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: 'Assistant', sans-serif; }
+        .modal-content { background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 25px; border-radius: var(--radius); width: 90%; max-width: 500px; animation: popIn 0.3s; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); }
+
+        #toast-container { position: fixed; top: 20px; left: 15px; right: 15px; z-index: 4000; display: flex; flex-direction: column; gap: 10px; align-items: center;}
+        .toast { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 400px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); color: var(--text-dark); padding: 14px 22px; border-radius: var(--radius); font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid rgba(255, 255, 255, 0.3); opacity: 0; transform: translateY(-20px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .toast .toast-icon { font-size: 24px; animation: popIn 0.5s; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        
+        #splash-screen { position: fixed; inset: 0; z-index: 9999; background-color: #ffffff; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease, visibility 0.5s ease; }
+        #splash-logo { width: 120px; height: 120px; border-radius: 50%; display: flex; justify-content: center; align-items: center; animation: logoPulse 2s infinite ease-in-out; }
+        .splash-loader { width: 40px; height: 40px; border: 4px solid rgba(11, 114, 185, 0.2); border-top-color: var(--brand); border-radius: 50%; animation: spin 1s linear infinite; margin-top: 20px; opacity: 0; transition: opacity 0.3s; }
+        #splash-screen.loading .splash-loader { opacity: 1; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .container-card { position: relative; }
+        .container-card.overdue { border-color: var(--danger); animation: overdue-pulse 2.5s infinite; }
+        .overdue-badge { position: absolute; top: -10px; left: -10px; background-color: var(--danger); color: white; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 12px; }
+        .container-card .progress-bar { width: 100%; height: 8px; background-color: var(--border); border-radius: 4px; overflow: hidden; margin: 15px 0; }
+        .container-card .progress-bar-inner { height: 100%; background-color: var(--brand); border-radius: 4px; transition: width 0.8s ease-out; }
+        .container-card.overdue .progress-bar-inner { background-color: var(--danger); }
+        .mini-map-container { border-radius: 12px; border: 1px solid var(--border); height: 150px; width: 100%; margin-top: 15px; background-color: #eee; }
+        .leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
+
+        .help-fab { position: fixed; bottom: 100px; left: 20px; width: 50px; height: 50px; background-color: var(--accent); color: white; border-radius: 50%; border: none; font-size: 24px; font-weight: bold; box-shadow: var(--shadow); z-index: 1001; cursor: pointer; animation: popIn 0.5s 2s ease-out backwards; }
+        .help-modal { position: fixed; inset: 0; background: var(--bg); z-index: 3000; transform: translateY(100%); transition: transform 0.4s ease-out; display: flex; flex-direction: column;}
+        .help-modal.show { transform: translateY(0); }
+        .help-header { padding: 15px; text-align: center; position: relative; background: var(--card); }
+        .help-close { position: absolute; top: 10px; left: 15px; font-size: 24px; cursor: pointer; border: none; background: none;}
+        .install-guide-icon { width: 40px; height: 40px; margin: 0 auto 10px auto; display: block; }
+        
+        .request-history { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px; }
+        .request-history-item { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
+        
+        .profile-container { position: relative; cursor: pointer; }
+        .profile-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border); transition: transform 0.2s; }
+        .logout-popup { position: absolute; top: 50px; left: 0; background: var(--card); border-radius: 10px; box-shadow: var(--shadow); padding: 5px; opacity: 0; visibility: hidden; transition: opacity 0.2s, transform 0.2s; transform: translateY(10px); z-index: 10; }
+        .profile-container.active .logout-popup { opacity: 1; visibility: visible; transform: translateY(0); }
+        .logout-btn { background: none; border: none; padding: 8px 12px; font-weight: 600; color: var(--danger); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+        #history-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .filter-btn { background-color: var(--card); color: var(--text-dark); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: all 0.2s; }
+        .filter-btn.active { background-color: var(--brand); color: white; border-color: var(--brand); font-weight: 700; }
+        .history-table { width: 100%; border-collapse: collapse; }
+        .history-table th { text-align: right; padding: 12px; border-bottom: 2px solid var(--brand); font-size: 14px; }
+        .history-table td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
+        .history-row { cursor: pointer; transition: background-color 0.2s; border-right: 4px solid transparent; }
+        .history-row:hover { background-color: #f7fafc; }
+        .history-row[data-action-type="החלפה"] { border-right-color: var(--accent); }
+        .history-row[data-action-type="הורדה"] { border-right-color: var(--success); }
+        .history-row[data-action-type="פינוי"] { border-right-color: var(--danger); }
+        
+        .eta-card { position: relative; overflow: hidden; padding: 15px; text-align: center;}
+        .eta-card.active { animation: subtle-pulse 2s infinite; }
+        .eta-road { width: 100%; height: 4px; background: var(--border); border-radius: 2px; margin-top: 15px; position: relative; }
+        .eta-progress { height: 100%; background: var(--brand); border-radius: 2px; position: absolute; right: 0; top: 0; transition: width 1s linear; }
+        .eta-truck { font-size: 30px; position: absolute; top: -20px; transform: translateX(50%) scaleX(-1); transition: right 1s linear; }
+        .eta-truck.static-truck { color: #ccc; }
+        .siren { width: 8px; height: 8px; border-radius: 50%; position: absolute; top: -5px; left: 12px; animation: siren-blink 1s infinite; }
     </style>
 </head>
 <body>
-    <header class="app-header">
-        <div class="header-profile">
-            <img src="https://img.icons8.com/?size=100&id=7WwZau6gMj6x&format=png&color=000000" alt="Profile">
-            <span class="header-profile-name" id="client-name-header">...</span>
-        </div>
-        <div class="header-time">
-            <div id="clock"></div>
-            <div class="date" id="date"></div>
-        </div>
-        <div class="header-status">
-            <span>אונליין</span>
-            <div class="online-dot"></div>
-        </div>
-    </header>
+    <div class="app-shell" style="display: none;">
+        <header class="app-header">
+             <div id="profile-container" class="profile-container">
+                <img id="profile-avatar" src="" alt="Profile" class="profile-avatar">
+                <div class="logout-popup">
+                    <button data-action="logout" class="logout-btn">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+                        <span>התנתק</span>
+                    </button>
+                </div>
+            </div>
+            <div style="text-align: center; font-weight: 600;">
+                <div id="clock"></div>
+                <div id="date" style="font-size: 12px; color: var(--text-muted);"></div>
+            </div>
+            <h1 id="client-name-header" style="font-weight: 700; font-size: 16px;">...</h1>
+        </header>
 
-    <main class="app-container" id="app-container">
-        <!-- Page: Home -->
-        <div id="page-home" class="page active">
-            <h1 class="page-title" id="greeting"></h1>
-             <div class="card" id="notification-prompt-card" style="display: none;">
-                <h2 class="card-title" style="font-size: 18px;">🔔 קבל עדכונים בזמן אמת</h2>
-                <p style="color: var(--text-light); margin-bottom: 15px;">אשר קבלת התראות כדי לקבל עדכונים על ההזמנות שלך ישירות לנייד.</p>
-                <button class="btn" id="enable-notifications-btn">אשר קבלת התראות</button>
+        <main class="app-container" id="app-container">
+            <div id="page-home" class="page">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                    <h1 class="page-title" id="greeting" style="margin-bottom: 0;"></h1>
+                    <button class="btn" data-action="new-order"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg> הזמן חדשה</button>
+                </div>
+                <div id="eta-card-container"></div>
+                <div id="active-orders-container"></div>
             </div>
-            <div class="card" id="eta-card-container"></div>
-            <div id="active-orders-container"></div>
-            <div id="no-active-orders" class="card" style="display: none; text-align: center;">
-                <p style="font-size: 18px; font-weight: 600;">אין לך כרגע הזמנות פעילות.</p>
-            </div>
-        </div>
-        <!-- Page: My Containers -->
-        <div id="page-containers" class="page">
-            <h1 class="page-title">המכולות שלי</h1>
-            <div id="containers-list"></div>
-        </div>
-        <!-- Page: History -->
-        <div id="page-history" class="page">
-            <h1 class="page-title">היסטוריית הזמנות</h1>
+            <div id="page-containers" class="page"><h1 class="page-title">המכולות שלי</h1><div id="containers-list"></div></div>
+            <div id="page-history" class="page"><h1 class="page-title">היסטוריית הזמנות</h1><div id="history-content"></div></div>
+            <div id="page-chat" class="page"><h1 class="page-title">צור קשר</h1><div id="chat-content" class="card"></div></div>
+        </main>
+        
+        <nav class="bottom-nav">
+            <button class="nav-btn" data-action="navigate" data-page="page-home"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span>דף הבית</span></button>
+            <button class="nav-btn" data-action="navigate" data-page="page-containers"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45-.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg><span>המכולות שלי</span></button>
+            <button class="nav-btn" data-action="navigate" data-page="page-history"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg><span>היסטוריה</span></button>
+            <button class="nav-btn" data-action="navigate" data-page="page-chat"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 15-3-3-3 3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"></path><path d="m3 9 3 3 3-3"></path></svg><span>צ'אט</span></button>
+        </nav>
+    </div>
+
+    <button class="help-fab" data-action="help-fab" style="display: none;">?</button>
+    <div id="help-modal" class="help-modal">
+        <div class="help-header"><h2 style="margin:0;">מדריך למשתמש</h2><button data-action="help-close" class="help-close">&times;</button></div>
+        <div style="flex-grow: 1; padding: 20px; overflow-y: auto;">
+             <div class="card"><h3 style="color: var(--brand); margin-bottom: 10px;">ברוכים הבאים!</h3><p>האפליקציה מאפשרת לכם לנהל את המכולות וההזמנות שלכם בקלות ובמהירות.</p></div>
+             <div class="card"><h4>🏠 דף הבית</h4><p>כאן תראו את המכולה הפעילה הראשונה שלכם או צפי הגעה של נהג.</p></div>
+             <div class="card"><h4>📦 המכולות שלי</h4><p>עמוד זה מציג את כל המכולות הפעילות באתר. כל כרטיס מציג מיקום, התקדמות ימי שכירות, והיסטוריית בקשות.</p></div>
+             <div class="card"><h4>📈 היסטוריה</h4><p>צפו בכל ההזמנות שלכם, סננו לפי פרויקט, ולחצו על שורה לקבלת פרטים מלאים.</p></div>
              <div class="card">
-                <div id="history-chart-container" style="margin-bottom: 20px;">
-                    <canvas id="historyChart"></canvas>
+                <h4>התקנה למסך הבית</h4>
+                <p style="margin-bottom: 15px;">להתקנת האפליקציה וחווית שימוש מלאה, בצעו את הפעולות הבאות:</p>
+                <div style="text-align: center;">
+                    <p><strong>באייפון (דפדפן ספארי):</strong></p>
+                    <p>לחצו על כפתור השיתוף <svg style="display: inline-block; vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg> ובחרו "הוסף למסך הבית".</p>
+                    <p style="margin-top: 10px;"><strong>באנדרואיד (דפדפן כרום):</strong></p>
+                    <p>לחצו על כפתור התפריט (שלוש נקודות) ובחרו "התקן אפליקציה" או "הוסף למסך הבית".</p>
                 </div>
-                <div style="overflow-x: auto;">
-                    <table class="history-table">
-                        <thead><tr><th>תעודה</th><th>תאריך</th><th>פעולה</th><th>כתובת</th></tr></thead>
-                        <tbody id="history-table-body"></tbody>
-                    </table>
-                </div>
-             </div>
-        </div>
-        <!-- Page: Chat -->
-        <div id="page-chat" class="page">
-            <h1 class="page-title">צור קשר</h1>
-            <div class="card">
-                <p style="font-weight: 600; margin-bottom: 10px;">בחר הודעה מהירה:</p>
-                <div class="chat-templates" id="chat-templates"></div>
-                <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
-                 <form id="chat-form">
-                     <div class="form-group">
-                        <label for="chat-message">או כתוב הודעה חופשית:</label>
-                        <textarea id="chat-message" required></textarea>
-                    </div>
-                    <button type="submit" class="btn">שלח הודעה</button>
-                 </form>
             </div>
         </div>
-    </main>
-
-    <nav class="bottom-nav">
-        <a href="#" class="nav-btn active" data-page="page-home">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-            <span>דף הבית</span>
-        </a>
-        <a href="#" class="nav-btn" data-page="page-containers">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg>
-            <span>המכולות שלי</span>
-        </a>
-        <a href="#" class="nav-btn" data-page="page-history">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-            <span>היסטוריה</span>
-        </a>
-        <a href="#" class="nav-btn" data-page="page-chat">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 15-3-3-3 3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"></path><path d="m3 9 3 3 3-3"></path></svg>
-            <span>צ'אט</span>
-        </a>
-    </nav>
-    
-    <div class="fab-container" id="fab-container">
-        <div class="fab-actions">
-            <a href="#" class="fab-action" data-action="העלאה">
-                <span class="label">בקש פינוי</span>
-                <div class="icon pickup"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"></path><path d="m6 11 6-6 6 6"></path><path d="M19 21H5"></path></svg></div>
-            </a>
-            <a href="#" class="fab-action" data-action="החלפה">
-                <span class="label">בקש החלפה</span>
-                <div class="icon swap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L4 7l4 4"></path><path d="M4 7h16"></path><path d="m16 21 4-4-4-4"></path><path d="M20 17H4"></path></svg></div>
-            </a>
-            <a href="#" class="fab-action" data-action="הורדה">
-                 <span class="label">הזמן חדשה</span>
-                <div class="icon download"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></div>
-            </a>
-        </div>
-        <button class="fab" id="fab">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-        </button>
     </div>
     
-    <button class="scroll-to-top" id="scroll-to-top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-    </button>
-    
-     <!-- Modal for new order -->
-    <div id="modal-container" class="modal-overlay">
-        <div class="modal-content">
-            <button id="modal-close-btn" class="modal-close">&times;</button>
-            <h3 id="modal-title" style="color: var(--brand); margin-bottom: 20px;"></h3>
-            <form id="new-order-form-modal">
-                <div class="form-group">
-                    <label for="address-select-modal">לאיזו כתובת?</label>
-                    <select id="address-select-modal" name="כתובת"></select>
-                </div>
-                 <div class="form-group">
-                    <label for="new-address-modal">או הקלד כתובת חדשה (אם צריך)</label>
-                    <input type="text" id="new-address-modal" placeholder="עיר, רחוב, מספר בית">
-                </div>
-                 <div class="form-group">
-                    <label>מיקום מדויק (אופציונלי)</label>
-                    <button type="button" class="btn secondary" id="get-location-btn" style="width: 100%;">הבא אותי לכאן</button>
-                    <input type="hidden" id="location-coords" name="מיקום">
-                 </div>
-                 <div class="form-group">
-                    <label for="order-notes-modal">הערות להזמנה</label>
-                    <textarea id="order-notes-modal" name="הערות" placeholder="לדוגמה: נא לתאם הגעה טלפונית..."></textarea>
-                </div>
-                <button type="submit" class="btn">שלח בקשה</button>
-            </form>
-        </div>
-    </div>
+    <div id="splash-screen"><div id="splash-logo"><img src="https://i.postimg.cc/2SbDgD1B/1.png" alt="לוגו ח.סבן" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"></div><div class="splash-loader"></div></div>
+    <div id="toast-container"></div>
+    <div id="modal-container" class="modal-overlay"></div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ⭐️⭐️⭐️ API URL UPDATED ⭐️⭐️⭐️
-            const API_URL = "https://script.google.com/macros/s/AKfycbwfRTTD1IyvbJPNuIzsip4kN-QX--hkRbGv7cHgZckODkZfOzPXaJQegwDMXvSethv0/exec";
-            
-            // ⭐️⭐️⭐️ FIREBASE CONFIG - PASTED FROM USER ⭐️⭐️⭐️
-            const firebaseConfig = {
-                apiKey: "AIzaSyDy3k1AoEKeuCKjmFxefn9fapeqv2Le1_w",
-                authDomain: "hsaban94-cc777.firebaseapp.com",
-                databaseURL: "https://hsaban94-cc777.firebaseio.com",
-                projectId: "hsaban94-cc777",
-                storageBucket: "hsaban94-cc777.appspot.com",
-                messagingSenderId: "299206369469",
-                appId: "1:299206369469:web:7527baa329def3a29457d4",
-                measurementId: "G-J2N5Z54MBL"
-            };
+    // Self-executing function to encapsulate the entire application logic
+    (() => {
+        // Using a try-catch block for the entire script to prevent app freeze on critical errors
+        try {
+            document.addEventListener('DOMContentLoaded', () => {
+                const API_URL = "https://script.google.com/macros/s/AKfycbz5zkASUR1Ye1ZzYvPDvq4VhZegvZHzG5vdczLEaahcw_NDO2D9vb_4sGVYFrjrHzc/exec";
+                let clientState = { id: null, name: null, avatar: null, orders: [], addresses: new Set() };
+                let currentPageId = 'page-home';
+                let mapInstances = {};
+                const dom = {};
 
-            const CHAT_TEMPLATES = ["המכולה מלאה, אשמח לתאם פינוי.", "צריך להחליף את המכולה במכולה ריקה.", "האם ניתן לקבל מכולה נוספת?", "מה צפי ההגעה של הנהג?", "תודה רבה על השירות המהיר!", "יש לי שאלה בנוגע לחיוב.", "האם ניתן להאריך את זמן השהייה של המכולה?", "עדכון כתובת - הפינוי יתבצע מכתובת אחרת.", "בקשה דחופה למכולה, אנא צרו קשר.", "הכל בסדר, רק רציתי לוודא שההזמנה התקבלה."];
-            let clientState = { id: null, name: null, orders: [], addresses: new Set(), historyChart: null };
-            let refreshInterval;
-            
-            const appContainer = document.getElementById('app-container');
-            const pages = document.querySelectorAll('.page');
-            const clientNameHeader = document.getElementById('client-name-header');
-            const clockDiv = document.getElementById('clock');
-            const dateDiv = document.getElementById('date');
-            const greetingDiv = document.getElementById('greeting');
-            const activeOrdersContainer = document.getElementById('active-orders-container');
-            const noActiveOrdersDiv = document.getElementById('no-active-orders');
-            const etaCardContainer = document.getElementById('eta-card-container');
-            const containersListDiv = document.getElementById('containers-list');
-            const historyTableBody = document.getElementById('history-table-body');
-            const historyChartCanvas = document.getElementById('historyChart');
-            const chatTemplatesContainer = document.getElementById('chat-templates');
-            const chatForm = document.getElementById('chat-form');
-            const navButtons = document.querySelectorAll('.nav-btn');
-            const fabContainer = document.getElementById('fab-container');
-            const fab = document.getElementById('fab');
-            const fabActions = document.querySelectorAll('.fab-action');
-            const scrollToTopBtn = document.getElementById('scroll-to-top');
-            const modalContainer = document.getElementById('modal-container');
-            const modalCloseBtn = document.getElementById('modal-close-btn');
-            const modalTitle = document.getElementById('modal-title');
-            const orderFormModal = document.getElementById('new-order-form-modal');
-            const addressSelectModal = document.getElementById('address-select-modal');
-            const getLocationBtn = document.getElementById('get-location-btn');
-            const notificationPromptCard = document.getElementById('notification-prompt-card');
-            const enableNotificationsBtn = document.getElementById('enable-notifications-btn');
-
-            function initApp() {
-                setupEventListeners();
-                updateClock();
-                setInterval(updateClock, 1000);
-                const storedClientId = localStorage.getItem('saban_client_id');
-                if (storedClientId) loadClientData(storedClientId);
-                else promptForClientId();
-                if (refreshInterval) clearInterval(refreshInterval);
-                refreshInterval = setInterval(() => loadClientData(clientState.id, true), 60000);
-            }
-
-            async function loadClientData(clientId, isRefresh = false) {
-                if (!clientId) return;
-                if (!isRefresh) appContainer.style.opacity = '0.5';
-                try {
-                    const data = await apiPost({ action: 'getClientData', identifier: clientId });
-                    if (data.status === 'error' || !data.clientName) throw new Error(data.message || "Client not found");
-                    clientState = { id: data.clientId, name: data.clientName, orders: data.orders || [], addresses: new Set(data.orders.map(o => o['כתובת']).filter(Boolean)), historyChart: clientState.historyChart };
-                    localStorage.setItem('saban_client_id', data.clientId);
-                    renderAllPages();
-                    initFirebasePush();
-                } catch (error) {
-                    console.error("Failed to load client data:", error);
-                    localStorage.removeItem('saban_client_id');
-                    if (error.message.includes("not found")) alert("מספר לקוח או טלפון לא נמצאו. אנא ודא שהקלדת את הפרט הנכון ונסה שוב.");
-                    else alert("שגיאה בטעינת נתוני לקוח. אנא בדוק את חיבור האינטרנט ונסה שוב.");
-                    promptForClientId();
-                } finally {
-                    if (!isRefresh) appContainer.style.opacity = '1';
-                }
-            }
-            
-            async function apiPost(body) { 
-                const response = await fetch(API_URL, { 
-                    method: 'POST', 
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
-                    body: JSON.stringify(body) 
-                }); 
-                if (!response.ok) throw new Error(`שגיאת רשת (סטטוס ${response.status})`); 
-                return await response.json(); 
-            }
-
-            function promptForClientId() {
-                const identifier = prompt("שלום! אנא הזן מספר לקוח או מספר טלפון כדי להתחבר:");
-                if (identifier && identifier.trim() !== '') loadClientData(identifier.trim());
-                else document.body.innerHTML = `<div style="padding: 20px; text-align: center;"><h1>נדרש מספר לקוח או טלפון. אנא רענן ונסה שוב.</h1></div>`;
-            }
-            
-             function parseDate(dateString) {
-                if (!dateString) return null;
-                const d = new Date(dateString);
-                return isNaN(d.getTime()) ? null : d;
-            }
-
-            // ========== PAGE RENDERING ==========
-            
-            function renderAllPages() {
-                renderHeaderAndGreeting();
-                renderHomePage();
-                renderContainersPage();
-                renderHistoryPage();
-                renderChatPage();
-            }
-            
-            function updateClock() {
-                const now = new Date();
-                clockDiv.textContent = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-                dateDiv.textContent = now.toLocaleDateString('he-IL', { weekday: 'long', day: '2-digit', month: '2-digit' });
-            }
-
-            function renderHeaderAndGreeting() {
-                clientNameHeader.textContent = clientState.name;
-                const hour = new Date().getHours();
-                let greeting = "ברוך הבא,";
-                if (hour >= 5 && hour < 12) greeting = "בוקר טוב,";
-                else if (hour >= 12 && hour < 18) greeting = "צהריים טובים,";
-                else greeting = "ערב טוב,";
-                greetingDiv.textContent = `${greeting} ${clientState.name.split(' ')[0]}`;
-            }
-
-            function renderHomePage() {
-                const activeOrders = clientState.orders.filter(o => o['סטטוס'] !== 'סגור');
-                activeOrdersContainer.innerHTML = '';
-                if (activeOrders.length === 0) {
-                    noActiveOrdersDiv.style.display = 'block';
-                    etaCardContainer.style.display = 'none';
-                } else {
-                    noActiveOrdersDiv.style.display = 'none';
-                    etaCardContainer.style.display = 'block';
-                    const mainOrder = activeOrders[0];
-                    activeOrdersContainer.innerHTML = `<div class="card"><h2 class="card-title"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.29V15.7a2 2 0 0 1-1.82 2H4.82A2 2 0 0 1 3 15.71V8.29a2 2 0 0 1 .45-1.28L8 2.29a2 2 0 0 1 1.45-.7a2 2 0 0 1 1.45.7l4.55 4.72a2 2 0 0 1 .45 1.28Z"></path><path d="M12 17.71V12"></path></svg>ההזמנה הפעילה שלך</h2><p style="font-size: 18px; font-weight: 600;">${mainOrder['סוג מכולה'] || 'מכולה'} בכתובת:</p><p style="font-size: 16px; color: var(--text-light);">${mainOrder['כתובת']}</p></div>`;
-                    const eta = parseDate(mainOrder['זמן הגעה משוער']);
-                    const driver = mainOrder['שם נהג'];
-                     if(eta instanceof Date && !isNaN(eta)) {
-                         etaCardContainer.innerHTML = `<div class="eta-card active"><div class="eta-info"><div class="label">${driver ? `הנהג ${driver} בדרך` : 'צפי הגעה'}</div><div class="value">${eta.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'})}</div></div><div class="eta-truck">🚚</div></div>`;
-                    } else if (mainOrder['זמן הגעה משוער'] || driver) {
-                        etaCardContainer.innerHTML = `<div class="eta-card active"><div class="eta-info"><div class="label">${driver ? `הנהג ${driver} בדרך` : 'צפי הגעה'}</div><div class="value">${mainOrder['זמן הגעה משוער'] || 'יצירת קשר בקרוב'}</div></div><div class="eta-truck">🚚</div></div>`;
+                function initApp() {
+                    document.body.classList.add('loaded');
+                    cacheDomElements();
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('service-worker.js').catch(err => console.error('SW registration failed', err));
+                    }
+                    updateClock();
+                    setInterval(updateClock, 1000);
+                    
+                    const storedClientId = localStorage.getItem('saban_client_id');
+                    // FIX for PWA startup issue: Directly check and proceed.
+                    if (storedClientId) {
+                        dom.splashScreen.classList.add('loading');
+                        loadClientData(storedClientId);
                     } else {
-                        etaCardContainer.innerHTML = `<div class="eta-card"><div class="eta-info"><div class="label">צפי הגעה</div><div class="value">טרם עודכן</div></div></div>`;
+                        dom.splashScreen.style.display = 'none';
+                        promptForClientId();
                     }
                 }
-            }
-            
-            function renderContainersPage() {
-                containersListDiv.innerHTML = '';
-                const activeOrdersWithContainers = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && o['מכולה ירדה']);
-                if (activeOrdersWithContainers.length === 0) {
-                    containersListDiv.innerHTML = `<div class="card" style="text-align: center;"><p>אין לך מכולות פעילות כרגע.</p></div>`;
-                    return;
-                }
-                activeOrdersWithContainers.forEach(order => {
-                    const startDate = parseDate(order['תאריך הזמנה']);
-                    const endDate = parseDate(order['תאריך סיום צפוי']);
-                    if (!startDate || !endDate) return;
 
+                function cacheDomElements(){
+                    Object.assign(dom, {
+                        body: document.body,
+                        appShell: document.querySelector('.app-shell'),
+                        splashScreen: document.getElementById('splash-screen'),
+                        pages: document.querySelectorAll('.page'),
+                        navButtons: document.querySelectorAll('.nav-btn'),
+                        modalContainer: document.getElementById('modal-container'),
+                        toastContainer: document.getElementById('toast-container'),
+                        activeOrdersContainer: document.getElementById('active-orders-container'),
+                        containersList: document.getElementById('containers-list'),
+                        etaCardContainer: document.getElementById('eta-card-container'),
+                        greeting: document.getElementById('greeting'),
+                        clientNameHeader: document.getElementById('client-name-header'),
+                        profileContainer: document.getElementById('profile-container'),
+                        profileAvatar: document.getElementById('profile-avatar'),
+                        clock: document.getElementById('clock'),
+                        date: document.getElementById('date'),
+                        helpFab: document.querySelector('.help-fab'),
+                        helpModal: document.getElementById('help-modal'),
+                        historyContent: document.getElementById('history-content'),
+                        chatContent: document.getElementById('chat-content')
+                    });
+                }
+                
+                async function loadClientData(clientId, isRefresh = false) {
+                    try {
+                        const data = await apiPost({ action: 'getClientData', identifier: clientId });
+                        if (data.status === 'error' || !data.clientName) throw new Error(data.message || "Client not found");
+                        
+                        clientState = { ...clientState, id: data.clientId, name: data.clientName, avatar: data.avatarUrl, orders: data.orders || [], addresses: new Set(data.orders.map(o => o['כתובת']).filter(Boolean)) };
+                        localStorage.setItem('saban_client_id', data.clientId);
+                        
+                        if (!isRefresh) {
+                            await playSplashScreenAnimation();
+                            dom.appShell.style.display = 'flex';
+                            setupEventListeners();
+                            navigateTo('page-home', true);
+                            renderAllPages();
+                            dom.helpFab.style.display = 'block';
+                        } else {
+                            renderHeaderAndGreeting();
+                            renderHomePage();
+                            renderContainersPage();
+                        }
+
+                    } catch (error) {
+                        console.error("Failed to load client data:", error);
+                        localStorage.removeItem('saban_client_id');
+                        dom.splashScreen.classList.remove('loading');
+                        dom.splashScreen.style.display = 'none';
+                        promptForClientId();
+                        showToast("שגיאה בטעינת נתונים. אנא נסה שוב.", '❌');
+                    }
+                }
+                
+                async function apiPost(body) {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+                    try {
+                        const response = await fetch(API_URL, { method: 'POST', mode: 'cors', body: JSON.stringify(body), cache: 'no-cache', headers: { 'Content-Type': 'text/plain' } });
+                        clearTimeout(timeoutId);
+                        if (!response.ok) throw new Error(`Network error`);
+                        const textResponse = await response.text();
+                        if (textResponse.startsWith('<')) {
+                            throw new Error("Received HTML response instead of JSON. Check script URL or permissions.");
+                        }
+                        return JSON.parse(textResponse);
+                    } catch(error) {
+                        clearTimeout(timeoutId);
+                        console.error("API Post Error:", error);
+                        throw error;
+                    }
+                }
+                
+                function promptForClientId() {
+                    dom.splashScreen.style.display = 'none';
+                    dom.modalContainer.innerHTML = `<div class="modal-content"><h3>ברוכים הבאים</h3><p style="color: var(--text-light); margin: 10px 0 20px 0;">כדי להתחבר, אנא הזן מספר לקוח או טלפון.</p><form id="login-form"><input type="text" id="login-identifier" placeholder="מספר לקוח / טלפון" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 16px; margin-bottom: 15px;"><button type="submit" class="btn" style="width: 100%;">התחבר</button></form></div>`;
+                    dom.modalContainer.classList.add('show');
+                    
+                    document.getElementById('login-form').addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const identifier = document.getElementById('login-identifier').value.trim();
+                        if (identifier) {
+                            dom.modalContainer.classList.remove('show');
+                            dom.splashScreen.style.display = 'flex';
+                            dom.splashScreen.classList.add('loading');
+                            loadClientData(identifier);
+                        }
+                    });
+                }
+                
+                function updateClock() {
                     const now = new Date();
-                    const totalDuration = (endDate - startDate) / (1000 * 3600 * 24);
-                    const elapsedDuration = (now - startDate) / (1000 * 3600 * 24);
-                    let progress = (totalDuration > 0) ? Math.min(100, (elapsedDuration / totalDuration) * 100) : 0;
+                    dom.clock.textContent = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+                    dom.date.textContent = now.toLocaleDateString('he-IL', { weekday: 'long', day: '2-digit', month: '2-digit' });
+                }
+
+                async function playSplashScreenAnimation() {
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            dom.splashScreen.style.opacity = '0';
+                            dom.splashScreen.addEventListener('transitionend', () => {
+                                dom.splashScreen.style.display = 'none';
+                                resolve();
+                            }, { once: true });
+                        }, 500);
+                    });
+                }
+                
+                function navigateTo(pageId, isInitial = false) {
+                     if (!isInitial && currentPageId === pageId) return;
+                    const oldPage = document.getElementById(currentPageId);
+                    const newPage = document.getElementById(pageId);
+                    if (!newPage) return;
+                    if (isInitial) { newPage.classList.add('active'); } 
+                    else {
+                        const oldPageIndex = Array.from(dom.pages).findIndex(p => p.id === currentPageId);
+                        const newPageIndex = Array.from(dom.pages).findIndex(p => p.id === pageId);
+                        const isForward = newPageIndex > oldPageIndex;
+                        oldPage.classList.add(isForward ? 'exit-to-left' : 'exit-to-right');
+                        newPage.classList.add(isForward ? 'enter-from-right' : 'enter-from-left');
+                        void newPage.offsetWidth; 
+                        newPage.classList.add('active');
+                        oldPage.addEventListener('transitionend', () => {
+                            oldPage.classList.remove('active', 'exit-to-left', 'exit-to-right');
+                            newPage.classList.remove('enter-from-left', 'enter-from-right');
+                        }, { once: true });
+                    }
+                    currentPageId = pageId;
+                    dom.navButtons.forEach(b => b.classList.toggle('active', b.dataset.page === pageId));
+                }
+
+                function renderAllPages() {
+                    renderHeaderAndGreeting();
+                    renderHomePage();
+                    renderContainersPage();
+                    renderHistoryPage();
+                    renderChatPage();
+                }
+
+                function renderHeaderAndGreeting() {
+                    const defaultAvatar = "https://img.icons8.com/?size=100&id=Ry7mumEprV9w&format=png&color=000000";
+                    dom.clientNameHeader.textContent = clientState.name;
+                    dom.profileAvatar.src = clientState.avatar || defaultAvatar;
+                    const hour = new Date().getHours();
+                    let greetingText = (hour < 12) ? "בוקר טוב" : (hour < 18) ? "צהריים טובים" : "ערב טוב";
+                    dom.greeting.textContent = `${greetingText}, ${clientState.name.split(' ')[0]}`;
+                }
+
+                function renderHomePage() {
+                    const activeOnSite = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && o['מכולה ירדה']);
+                    const upcomingOrders = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && !o['מכולה ירדה']);
                     
-                    let progressClass = '';
-                    if (progress > 85) progressClass = 'danger';
-                    else if (progress > 60) progressClass = 'warning';
+                    if (upcomingOrders.length > 0) {
+                        const order = upcomingOrders[0];
+                        dom.etaCardContainer.innerHTML = createEtaCardHTML(order);
+                    } else { 
+                        dom.etaCardContainer.innerHTML = ''; 
+                    }
                     
+                    const container = dom.activeOrdersContainer;
+                    container.innerHTML = '';
+                    if (activeOnSite.length > 0) {
+                        const cardElement = createContainerCardElement(activeOnSite[0]);
+                        container.appendChild(cardElement);
+                        renderLeafletMap(cardElement.querySelector('.mini-map-container'), activeOnSite[0]['כתובת']);
+                    } else if (upcomingOrders.length === 0) {
+                        container.innerHTML = '<div class="card" style="text-align:center;"><p>אין לך כרגע הזמנות פעילות.</p></div>';
+                    }
+                }
+
+                function createEtaCardHTML(order) {
+                    const eta = order['זמן הגעה משוער'];
+                    const driverName = order['שם נהג'];
+                    let truckClass = 'static-truck';
+                    let progressStyle = 'width: 0%;';
+                    let truckStyle = 'right: 0%;';
+                    let title = `${driverName ? `הנהג ${driverName} בדרך` : 'הזמנה בדרך'}`;
+                    let etaText = `צפי הגעה: ${eta || 'טרם עודכן'}`;
+
+                    if (eta) {
+                        truckClass = '';
+                        const [hours, minutes] = eta.split(':').map(Number);
+                        const etaDate = new Date();
+                        etaDate.setHours(hours, minutes, 0, 0);
+                        
+                        const startDate = new Date();
+                        startDate.setHours(8, 0, 0, 0);
+
+                        const totalDuration = etaDate - startDate;
+                        const elapsedDuration = Date.now() - startDate;
+                        const progress = Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100));
+
+                        progressStyle = `width: ${progress}%;`;
+                        truckStyle = `right: ${progress}%;`;
+                    }
+
+                    return `
+                        <div class="card eta-card ${eta ? 'active' : ''}">
+                            <div style="color: var(--brand); font-weight: 700;">${title}</div>
+                            <div>${etaText}</div>
+                            <div class="eta-road">
+                                <div class="eta-progress" style="${progressStyle}"></div>
+                                <div class="eta-truck ${truckClass}" style="${truckStyle}">
+                                    ${eta ? '<div class="siren"></div>' : ''}
+                                    🚛
+                                </div>
+                            </div>
+                        </div>`;
+                }
+
+                function renderContainersPage() {
+                    const activeOnSite = clientState.orders.filter(o => o['סטטוס'] !== 'סגור' && o['מכולה ירדה']);
+                    const container = dom.containersList;
+                    container.innerHTML = '';
+                    if (activeOnSite.length === 0) { container.innerHTML = '<div class="card" style="text-align:center;"><p>אין לך מכולות פעילות כרגע.</p></div>'; return; }
+                    activeOnSite.forEach(order => {
+                        const cardElement = createContainerCardElement(order);
+                        container.appendChild(cardElement);
+                        setTimeout(() => renderLeafletMap(cardElement.querySelector('.mini-map-container'), order['כתובת']), 100);
+                    });
+                }
+                
+                function renderHistoryPage(filter = 'all') {
+                    const projects = ['all', ...new Set(clientState.orders.map(o => o['פרוייקט']).filter(Boolean))];
+                    const filtersHTML = projects.map(p => `<button class="filter-btn ${filter === p ? 'active' : ''}" data-action="filter-history" data-project="${p}">${p === 'all' ? 'הכל' : p}</button>`).join('');
+                    
+                    const filteredOrders = filter === 'all' ? clientState.orders : clientState.orders.filter(o => o['פרוייקט'] === filter);
+
+                    const tableHTML = `
+                        <div id="history-filters">${filtersHTML}</div>
+                        <div style="overflow-x: auto;">
+                            <table class="history-table">
+                                <thead><tr><th>פרויקט</th><th>תעודה</th><th>תאריך</th><th>פעולה</th></tr></thead>
+                                <tbody>
+                                    ${filteredOrders.map(order => `
+                                        <tr class="history-row" data-action="show-history-details" data-order-id="${order['תעודה']}" data-action-type="${order['סוג פעולה']}">
+                                            <td>${order['פרוייקט'] || '-'}</td>
+                                            <td>${order['תעודה'] || ''}</td>
+                                            <td>${new Date(order['תאריך הזמנה'])?.toLocaleDateString('he-IL') || ''}</td>
+                                            <td>${order['סוג פעולה'] || ''}</td>
+                                        </tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>`;
+                    dom.historyContent.innerHTML = tableHTML;
+                }
+
+                function renderChatPage() {
+                    const templates = { "שאלות נפוצות": ["מה צפי ההגעה?", "האם ניתן להאריך שהייה?"], "בקשות": ["המכולה מלאה, לתאם פינוי.", "פינוי דחוף, צרו קשר."] };
+                    let html = Object.keys(templates).map(cat => `<p style="font-weight: 600; margin-top: 15px; margin-bottom: 5px;">${cat}</p>` + templates[cat].map(t => `<button class="btn secondary" data-action="chat-template" style="width: 100%; justify-content: flex-start; text-align: right; margin-bottom: 5px;">${t}</button>`).join('')).join('');
+                    dom.chatContent.innerHTML = `<div id="chat-templates">${html}</div><form id="chat-form" style="margin-top: 20px;"><label for="chat-message">או כתוב הודעה חופשית: 👋</label><textarea id="chat-message" required placeholder="כתוב כאן..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid var(--border); margin-top:5px;"></textarea><button type="submit" class="btn" style="width:100%; margin-top: 10px;">שלח הודעה</button></form>`;
+                }
+                
+                function createContainerCardElement(order) {
                     const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `<div style="display:flex; justify-content: space-between; align-items: baseline;"><h3 style="font-size: 18px; font-weight: 700;">מכולה ${order['מכולה ירדה']}</h3><span style="font-size: 14px; color: var(--text-muted);">${order['כתובת']}</span></div><div style="display:flex; justify-content: space-between; font-size: 14px; margin-top: 15px;"><span>התחלה: ${startDate.toLocaleDateString('he-IL')}</span><span>סיום: ${endDate.toLocaleDateString('he-IL')}</span></div><div class="progress-bar ${progressClass}"><div class="progress-bar-inner" style="width: ${progress}%;"></div></div><p style="text-align: center; margin-top: 10px; font-weight: 600;">נשארו כ-${Math.max(0, Math.round(totalDuration - elapsedDuration))} ימים לסיום</p>`;
-                    containersListDiv.appendChild(card);
-                });
-            }
+                    card.className = 'card container-card';
+                    const startDate = new Date(order['תאריך הזמנה']);
+                    const endDate = new Date(order['תאריך סיום צפוי']);
+                    const progress = Math.min(100, ((Date.now() - startDate) / (endDate - startDate)) * 100);
+                    const remainingDays = Math.ceil(Math.max(0, endDate - Date.now()) / (1000 * 60 * 60 * 24));
+                    const isOverdue = Date.now() > endDate;
+                    if(isOverdue) card.classList.add('overdue');
+                    
+                    const historyHTML = (order.requests || []).map(req => `<div class="request-history-item"><span>בקשת ${req.type}</span><span style="color: var(--text-muted);">${req.date}</span></div>`).join('');
 
-            function renderHistoryPage() {
-                historyTableBody.innerHTML = '';
-                clientState.orders.forEach(order => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td>${order['מספר תעודה'] || ''}</td><td>${parseDate(order['תאריך הזמנה']).toLocaleDateString('he-IL')}</td><td>${order['סוג פעולה'] || 'הורדה'}</td><td>${order['כתובת'] || ''}</td>`;
-                    historyTableBody.appendChild(row);
-                });
-                if(clientState.historyChart) clientState.historyChart.destroy();
-                const monthlyData = clientState.orders.reduce((acc, order) => {
-                    const date = parseDate(order['תאריך הזמנה']);
-                    if(date) {
-                       const month = date.toLocaleDateString('he-IL', { year: '2-digit', month: 'short' });
-                       acc[month] = (acc[month] || 0) + 1;
+                    card.innerHTML = `
+                        ${isOverdue ? '<div class="overdue-badge">בחריגה</div>' : ''}
+                        <div style="display:flex; justify-content: space-between; align-items: flex-start;">
+                            <div><h3 style="font-size: 1.1rem; margin-bottom: 4px;">${order['שם פרויקט'] || `מכולה ${order['מכולה ירדה']}`}</h3><p style="color: var(--text-light); font-size: 0.9rem;">${order['כתובת']}</p></div>
+                            <div style="text-align: center; flex-shrink: 0; margin-right: 15px;">
+                                <div style="font-weight: bold; font-size: 1.2rem;">${isOverdue ? '!' : remainingDays}</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">${isOverdue ? 'בחריגה' : 'ימים נותרו'}</div>
+                            </div>
+                        </div>
+                        <div class="progress-bar"><div class="progress-bar-inner" style="width: ${progress}%;"></div></div>
+                        <div class="mini-map-container" id="map-card-${order['תעודה']}"></div>
+                        <div class="request-history"><h4 style="font-size: 1rem; margin-bottom: 5px;">היסטוריית בקשות</h4>${historyHTML || '<p style="font-size: 14px; color: var(--text-muted);">אין בקשות קודמות.</p>'}</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+                            <button class="btn secondary" data-action="request-swap" data-order-id="${order['תעודה']}">החלפה</button>
+                            <button class="btn" data-action="request-pickup" data-order-id="${order['תעודה']}">פינוי</button>
+                        </div>`;
+                    return card;
+                }
+                
+                async function sendClientRequest(requestType, details) {
+                     try {
+                        showToast("שולח בקשה...", '💬');
+                        await apiPost({ 
+                            action: 'clientRequest', 
+                            timestamp: new Date().toISOString(),
+                            clientId: clientState.id, 
+                            clientName: clientState.name, 
+                            requestType, 
+                            details 
+                        });
+                        showToast("בקשתך נשלחה בהצלחה!", '✅');
+                    } catch (error) { 
+                        showToast(`שגיאה בשליחת הבקשה`, '❌'); 
                     }
-                    return acc;
-                }, {});
-                clientState.historyChart = new Chart(historyChartCanvas, {
-                    type: 'bar',
-                    data: { labels: Object.keys(monthlyData), datasets: [{ label: 'כמות הזמנות', data: Object.values(monthlyData), backgroundColor: 'var(--brand)', borderRadius: 5 }] },
-                    options: { responsive: true, plugins: { legend: { display: true, labels: { boxWidth: 0 } } } }
-                });
-            }
-
-            function renderChatPage() {
-                chatTemplatesContainer.innerHTML = '';
-                CHAT_TEMPLATES.forEach(template => {
-                    const btn = document.createElement('button');
-                    btn.className = 'template-btn';
-                    btn.textContent = template;
-                    btn.onclick = () => handleChatMessage(template);
-                    chatTemplatesContainer.appendChild(btn);
-                });
-            }
-
-            // ========== EVENT HANDLERS & SUBMISSIONS ==========
-
-            function setupEventListeners() {
-                navButtons.forEach(btn => btn.addEventListener('click', (e) => { e.preventDefault(); navigateTo(btn.dataset.page); }));
-                fab.addEventListener('click', () => fabContainer.classList.toggle('active'));
-                fabActions.forEach(action => action.addEventListener('click', (e) => { e.preventDefault(); openNewOrderModal(action.dataset.action); fabContainer.classList.remove('active'); }));
-                appContainer.addEventListener('scroll', () => scrollToTopBtn.classList.toggle('show', appContainer.scrollTop > 200));
-                scrollToTopBtn.addEventListener('click', () => appContainer.scrollTo({ top: 0, behavior: 'smooth' }));
-                modalCloseBtn.addEventListener('click', () => modalContainer.classList.remove('show'));
-                orderFormModal.addEventListener('submit', handleNewOrderSubmit);
-                chatForm.addEventListener('submit', handleChatSubmit);
-                getLocationBtn.addEventListener('click', handleGetLocation);
-                enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
-            }
-            
-            function navigateTo(pageId) {
-                const currentPage = document.querySelector('.page.active');
-                const nextPage = document.getElementById(pageId);
-                if (currentPage === nextPage) return;
-                currentPage.classList.add('exiting');
-                setTimeout(() => {
-                    currentPage.classList.remove('active', 'exiting');
-                    nextPage.classList.add('active');
-                    navButtons.forEach(b => b.classList.remove('active'));
-                    document.querySelector(`.nav-btn[data-page="${pageId}"]`).classList.add('active');
-                    appContainer.scrollTop = 0;
-                }, 400);
-            }
-
-            function openNewOrderModal(actionType) {
-                modalTitle.textContent = `בקשת ${actionType}`;
-                orderFormModal.dataset.actionType = actionType;
-                addressSelectModal.innerHTML = '';
-                clientState.addresses.forEach(address => {
-                    const option = document.createElement('option');
-                    option.value = address;
-                    option.textContent = address;
-                    addressSelectModal.appendChild(option);
-                });
-                const newAddressOption = document.createElement('option');
-                newAddressOption.value = 'new';
-                newAddressOption.textContent = 'כתובת חדשה...';
-                addressSelectModal.appendChild(newAddressOption);
-                modalContainer.classList.add('show');
-            }
-
-            async function handleNewOrderSubmit(e) {
-                e.preventDefault();
-                const actionType = e.target.dataset.actionType;
-                const address = document.getElementById('new-address-modal').value.trim() || addressSelectModal.value;
-                const notes = document.getElementById('order-notes-modal').value.trim();
-                const location = document.getElementById('location-coords').value;
-                if (address === 'new' && !document.getElementById('new-address-modal').value.trim()) {
-                    alert("אנא בחר כתובת קיימת או הקלד כתובת חדשה.");
-                    return;
                 }
-                let details = `כתובת: ${address}. הערות: ${notes || 'אין'}.`;
-                if(location) details += ` מיקום GPS: ${location}`;
-                await sendClientRequest(actionType, details);
-                orderFormModal.reset();
-                modalContainer.classList.remove('show');
-            }
-            
-            async function handleChatMessage(message) {
-                if(!message || !message.trim()) return;
-                const activeOrder = clientState.orders.find(o => o['סטטוס'] !== 'סגור');
-                const eta = activeOrder ? activeOrder['זמן הגעה משוער'] : null;
-                const driver = activeOrder ? activeOrder['שם נהג'] : null;
-                if(message === "מה צפי ההגעה של הנהג?" && (eta || driver)) {
-                     const reply = `היי ${clientState.name.split(' ')[0]}, ${driver ? `הנהג ${driver}` : 'הנהג'} בדרך. זמן ההגעה המשוער הוא ${eta || 'בקרוב'}.`;
-                     showToast(reply, 'info');
-                } else {
-                    await sendClientRequest('הודעת צאט', message);
-                }
-            }
 
-            function handleChatSubmit(e) {
-                e.preventDefault();
-                const messageInput = document.getElementById('chat-message');
-                handleChatMessage(messageInput.value);
-                messageInput.value = '';
-            }
-            
-            async function sendClientRequest(requestType, details) {
-                try {
-                    const result = await apiPost({ action: 'clientRequest', clientId: clientState.id, clientName: clientState.name, requestType, details });
-                    if (result.status === 'success') {
-                        showToast("בקשתך נשלחה בהצלחה!", "success");
-                    } else { throw new Error(result.message || 'Unknown error'); }
-                } catch (error) { showToast(`שגיאה בשליחת הבקשה: ${error.message}`, "error"); }
-            }
-
-            function handleGetLocation() {
-                if (!navigator.geolocation) {
-                    alert("שירותי מיקום אינם נתמכים בדפדפן זה.");
-                    return;
-                }
-                getLocationBtn.textContent = 'מאמת מיקום...';
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const coords = `${position.coords.latitude},${position.coords.longitude}`;
-                        document.getElementById('location-coords').value = coords;
-                        getLocationBtn.textContent = '✅ מיקום נשמר';
-                        getLocationBtn.style.backgroundColor = 'var(--success)';
-                    },
-                    () => {
-                        alert("לא ניתן היה לקבל את המיקום. אנא ודא שההרשאות מאושרות.");
-                        getLocationBtn.textContent = 'הבא אותי לכאן';
-                    }
-                );
-            }
-            
-            // ========== NOTIFICATIONS LOGIC ==========
-            
-            function initFirebasePush() {
-                try {
-                    if ('serviceWorker' in navigator && typeof firebase !== 'undefined' && firebaseConfig.apiKey) {
-                        if (!firebase.apps.length) {
-                            firebase.initializeApp(firebaseConfig);
+                function openOrderModal(actionType, order) {
+                     const isNewOrder = !order;
+                     let title = isNewOrder ? "הזמנת מכולה חדשה" : `בקשת ${actionType}`;
+                     let addressContent = isNewOrder ? `<div class="form-group"><label>בחר כתובת או הקלד חדשה</label><select id="address-select" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-top:5px;"><option value="">-- בחר כתובת --</option>${Array.from(clientState.addresses).map(a => `<option value="${a}">${a}</option>`).join('')}<option value="new">כתובת חדשה...</option></select></div><div id="new-address-group" style="display:none; margin-top:10px;"><input type="text" id="new-address" placeholder="עיר, רחוב, מספר בית" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border);"></div><div style="margin-top:10px;"><input type="text" id="placement-location" placeholder="מיקום מדויק להצבה (ליד השער וכו')" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border);"></div>` : `<p style="margin-bottom: 20px;">עבור מכולה בכתובת: <strong>${order['כתובת']}</strong></p>`;
+                     dom.modalContainer.innerHTML = `<div class="modal-content"><h3 style="margin-bottom: 20px;">${title}</h3>${addressContent}<form id="order-request-form"><div style="margin-top:15px;"><label>הערות</label><textarea id="order-notes" placeholder="לדוגמה: נא לתאם הגעה טלפונית..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid var(--border); margin-top:5px;"></textarea></div><div style="display: flex; gap: 10px; margin-top:20px;"><button type="button" class="btn secondary" data-action="close-modal" style="flex:1;">ביטול</button><button type="submit" class="btn" style="flex:2;">שלח בקשה</button></div></form></div>`;
+                     dom.modalContainer.classList.add('show');
+                    if (isNewOrder) { document.getElementById('address-select').onchange = (e) => { document.getElementById('new-address-group').style.display = e.target.value === 'new' ? 'block' : 'none'; }; }
+                    dom.modalContainer.querySelector('[data-action="close-modal"]').onclick = () => dom.modalContainer.classList.remove('show');
+                    document.getElementById('order-request-form').onsubmit = (e) => {
+                        e.preventDefault();
+                        let details, address;
+                        const notes = document.getElementById('order-notes').value;
+                        if(isNewOrder) {
+                            const newAddress = document.getElementById('new-address').value.trim();
+                            const placement = document.getElementById('placement-location').value.trim();
+                            address = newAddress || document.getElementById('address-select').value;
+                            if (!address || address === 'new' || address === '') { showToast('אנא בחר או הקלד כתובת.', 'error'); return; }
+                            details = `כתובת: ${address}. מיקום להצבה: ${placement || 'לא צוין'}. הערות: ${notes || 'אין'}`;
+                        } else { 
+                            details = `מכולה קיימת: ${order['תעודה']}. כתובת: ${order['כתובת']}. הערות: ${notes || 'אין'}`; 
                         }
-                        const messaging = firebase.messaging();
-                        if (Notification.permission === 'granted') {
-                            retrieveToken(messaging);
-                        } else if (Notification.permission !== 'denied') {
-                            notificationPromptCard.style.display = 'block';
+                        sendClientRequest(actionType, details);
+                        dom.modalContainer.classList.remove('show');
+                    };
+                }
+
+                function openHistoryDetailModal(order) {
+                    if (!order) return;
+                    dom.modalContainer.innerHTML = `<div class="modal-content" style="padding:0;"><div style="padding: 20px 20px 0 20px;"><h3 style="margin-bottom: 10px;">פרטי הזמנה ${order['תעודה']}</h3><p><strong>פרויקט:</strong> ${order['פרוייקט'] || '-'}</p><p><strong>כתובת:</strong> ${order['כתובת']}</p><p><strong>תאריך:</strong> ${new Date(order['תאריך הזמנה'])?.toLocaleDateString('he-IL')}</p><p><strong>פעולה:</strong> ${order['סוג פעולה']}</p></div><div id="history-map" style="height: 200px; width: 100%; margin-top: 15px; border-bottom-left-radius: var(--radius); border-bottom-right-radius: var(--radius);"></div></div>`;
+                    dom.modalContainer.classList.add('show');
+                    renderLeafletMap(document.getElementById('history-map'), order['כתובת']);
+                    dom.modalContainer.onclick = (e) => { if(e.target === dom.modalContainer) dom.modalContainer.classList.remove('show'); };
+                }
+
+                function renderLeafletMap(container, address) { 
+                     if (!container || !address) return;
+                    const mapId = container.id;
+                    if (mapInstances[mapId]) mapInstances[mapId].remove();
+                    container.innerHTML = '<div style="text-align:center; padding-top: 50px; color: var(--text-muted);">טוען מפה...</div>';
+                    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data && data.length > 0) {
+                                container.innerHTML = '';
+                                const { lat, lon } = data[0];
+                                const map = L.map(container, { zoomControl: false, scrollWheelZoom: false, dragging: true, doubleClickZoom: false }).setView([lat, lon], 15);
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                                L.marker([lat, lon]).addTo(map);
+                                mapInstances[mapId] = map;
+                            } else { container.innerHTML = '<div style="text-align:center; padding-top: 50px; color: var(--text-muted);">כתובת לא נמצאה.</div>'; }
+                        }).catch(err => { container.innerHTML = '<div style="text-align:center; padding-top: 50px; color: var(--text-muted);">שגיאה בטעינת מפה.</div>'; });
+                }
+                function showToast(message, icon = 'ℹ️') { 
+                    const toast = document.createElement('div');
+                    toast.className = `toast`;
+                    toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+                    dom.toastContainer.appendChild(toast);
+                    setTimeout(() => toast.classList.add('show'), 100);
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                        toast.addEventListener('transitionend', () => toast.remove());
+                    }, 3000);
+                }
+                
+                function setupEventListeners() {
+                    dom.body.addEventListener('click', (e) => {
+                        const actionElement = e.target.closest('[data-action]');
+                        if (!actionElement) {
+                            if(!e.target.closest('#profile-container')) dom.profileContainer.classList.remove('active');
+                            if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('show');
+                            return;
+                        };
+
+                        const action = actionElement.dataset.action;
+                        switch(action) {
+                            case 'navigate': navigateTo(actionElement.dataset.page); break;
+                            case 'help-fab': dom.helpModal.classList.add('show'); break;
+                            case 'help-close': dom.helpModal.classList.remove('show'); break;
+                            case 'toggle-profile': dom.profileContainer.classList.toggle('active'); break;
+                            case 'logout': localStorage.clear(); window.location.reload(); break;
+                            case 'new-order': openOrderModal('הזמנה חדשה'); break;
+                            case 'chat-template': document.getElementById('chat-message').value = actionElement.textContent; break;
+                            case 'filter-history': renderHistoryPage(actionElement.dataset.project); break;
+                            case 'show-history-details':
+                                const order = clientState.orders.find(o => o['תעודה'] == actionElement.dataset.orderId);
+                                openHistoryDetailModal(order);
+                                break;
+                            case 'request-swap': case 'request-pickup': {
+                                const orderId = actionElement.dataset.orderId;
+                                const order = clientState.orders.find(o => o['תעודה'] == orderId);
+                                if (order) openOrderModal(action === 'request-swap' ? 'החלפה' : 'פינוי', order);
+                                break;
+                            }
                         }
-                    } else {
-                         console.warn("Firebase or Service Worker not supported/configured.");
-                    }
-                } catch(e) {
-                    console.error("Firebase initialization failed:", e);
+                    });
+
+                    dom.body.addEventListener('submit', e => {
+                        if (e.target.id === 'chat-form') {
+                            e.preventDefault();
+                            const msgInput = document.getElementById('chat-message');
+                            if (msgInput.value.trim()) {
+                                sendClientRequest('הודעת צאט', msgInput.value.trim());
+                                msgInput.value = '';
+                            }
+                        }
+                    });
                 }
-            }
-
-            async function requestNotificationPermission() {
-                try {
-                    const messaging = firebase.messaging();
-                    await messaging.requestPermission();
-                    showToast('אישור התקבל! תוכל לקבל עדכונים.', 'success');
-                    notificationPromptCard.style.display = 'none';
-                    retrieveToken(messaging);
-                } catch (error) {
-                    console.error('Unable to get permission to notify.', error);
-                    showToast('אישור נדחה. ניתן לאפשר התראות בהגדרות הדפדפן.', 'warning');
-                    notificationPromptCard.style.display = 'none';
-                }
-            }
-
-            async function retrieveToken(messaging) {
-                try {
-                    // ⭐️⭐️⭐️ הדבק כאן את ה-VAPID key שלך ⭐️⭐️⭐️
-                    const VAPID_KEY = "YOUR_VAPID_PUBLIC_KEY_HERE"; 
-                    const currentToken = await messaging.getToken({ vapidKey: VAPID_KEY });
-                    if (currentToken) {
-                        sendTokenToServer(currentToken);
-                    } else {
-                        console.log('No registration token available. Request permission to generate one.');
-                    }
-                } catch (err) {
-                    console.error('An error occurred while retrieving token. ', err);
-                }
-            }
-
-            async function sendTokenToServer(token) {
-                const storedToken = localStorage.getItem('fcm_token');
-                if (token === storedToken) return;
-
-                try {
-                    await apiPost({ action: 'saveClientToken', clientId: clientState.id, token: token });
-                    localStorage.setItem('fcm_token', token);
-                    console.log("Token sent to server successfully.");
-                } catch (error) {
-                    console.error("Error sending token to server:", error);
-                }
-            }
-
-            // ========== START APP ==========
-            initApp();
-        });
+                
+                initApp();
+            });
+        } catch (e) {
+            // Fallback for critical errors
+            document.body.innerHTML = `<div style="padding: 20px; text-align: center;"><h1>אפליקציה נתקלה בשגיאה חמורה</h1><p>נסה לרענן את הדף.</p></div>`
+            console.error("Critical application error:", e);
+        }
+    })();
     </script>
 </body>
 </html>
