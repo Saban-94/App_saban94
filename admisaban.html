@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול הזמנות - ח.סבן</title>
+    <link rel="icon" href="https://i.postimg.cc/2SbDgD1B/1.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand: #0b72b9; --accent: #ff9f1c; --bg: #f0f2f5; --card: #ffffff;
+            --text-dark: #1a202c; --text-light: #4a5568; --text-muted: #718096;
+            --border: #e2e8f0; --success: #38a169; --warning: #dd6b20; --danger: #e53e3e;
+            --radius: 16px; --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        @keyframes popIn { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes subtle-blink { 0%, 100% { background-color: var(--card); } 50% { background-color: #fffbe6; } }
+        @keyframes overdue-pump { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(229, 62, 62, 0); } }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Assistant', sans-serif; background-color: var(--bg); color: var(--text-dark); }
+        .dashboard-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 15px 25px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; }
+        .header-title { font-size: 24px; font-weight: 700; }
+        .header-clock { font-size: 18px; font-weight: 600; text-align: left; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: var(--card); padding: 20px; border-radius: var(--radius); text-align: center; }
+        .stat-card h4 { color: var(--text-muted); font-size: 16px; }
+        .stat-card .stat-number { font-size: 36px; font-weight: 700; color: var(--brand); }
+        .stat-card.overdue .stat-number { color: var(--danger); animation: overdue-pump 2s infinite; }
+        
+        .online-users { margin-bottom: 20px; }
+        .online-users h3 { margin-bottom: 10px; }
+        .users-list { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
+        .user-chip { display: flex; align-items: center; gap: 8px; background: var(--card); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); font-weight: 600; }
+        .user-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+        .online-indicator { width: 10px; height: 10px; background: var(--success); border-radius: 50%; border: 2px solid var(--card); }
+        
+        .tasks-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .task-column h3 { padding: 0 10px 10px 10px; }
+        .task-card { background: var(--card); padding: 15px; border-radius: var(--radius); margin-bottom: 15px; border-left: 5px solid var(--brand); transition: box-shadow 0.2s; }
+        .task-card.type-message { border-left-color: var(--accent); }
+        .task-card.new { animation: subtle-blink 2.5s infinite; }
+        .task-card.done { opacity: 0.6; background-color: #fafafa; border-left-color: var(--success); }
+        .task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .task-header h5 { font-size: 16px; }
+        .task-header small { color: var(--text-muted); }
+        .task-details { font-size: 15px; margin-bottom: 15px; }
+        .task-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+        .btn { background: var(--brand); color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .btn:hover { opacity: 0.9; }
+        .btn-icon { background: none; border: none; cursor: pointer; padding: 5px; }
+        .btn-icon svg { width: 20px; height: 20px; }
+        
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; visibility: hidden; transition: opacity 0.3s; backdrop-filter: blur(5px); }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content { background-color: var(--bg); padding: 20px; border-radius: var(--radius); width: 90%; max-width: 600px; animation: popIn 0.3s; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); max-height: 90vh; overflow-y: auto;}
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1 class="header-title">לוח בקרה - מחלקת הזמנות</h1>
+            <div class="header-clock">
+                <div id="clock"></div>
+                <div id="date" style="font-size: 14px; color: var(--text-muted);"></div>
+            </div>
+        </header>
+
+        <section class="stats-grid" id="stats-grid">
+            <!-- Stats cards will be inserted here -->
+        </section>
+
+        <section class="online-users">
+            <h3>לקוחות מחוברים</h3>
+            <div class="users-list" id="online-users-list"></div>
+        </section>
+
+        <main class="tasks-board">
+            <div class="task-column">
+                <h3><span style="color: var(--brand);">■</span> בקשות חדשות</h3>
+                <div id="requests-column"></div>
+            </div>
+            <div class="task-column">
+                <h3><span style="color: var(--accent);">■</span> הודעות חדשות</h3>
+                <div id="messages-column"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-container" class="modal-overlay"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const API_URL = "https://script.google.com/macros/s/AKfycbz5zkASUR1Ye1ZzYvPDvq4VhZegvZHzG5vdczLEaahcw_NDO2D9vb_4sGVYFrjrHzc/exec";
+        let dashboardState = { requests: [], stats: {}, onlineUsers: [] };
+        const dom = {};
+
+        function initAdminDashboard() {
+            cacheDomElements();
+            updateClock();
+            setInterval(updateClock, 1000);
+            loadAdminData();
+            setInterval(loadAdminData, 20000); // Refresh every 20 seconds
+            setupEventListeners();
+        }
+        
+        function cacheDomElements() {
+            Object.assign(dom, {
+                clock: document.getElementById('clock'),
+                date: document.getElementById('date'),
+                statsGrid: document.getElementById('stats-grid'),
+                onlineUsersList: document.getElementById('online-users-list'),
+                requestsColumn: document.getElementById('requests-column'),
+                messagesColumn: document.getElementById('messages-column'),
+                modalContainer: document.getElementById('modal-container')
+            });
+        }
+
+        async function loadAdminData() {
+            try {
+                const data = await apiPost({ action: 'getAdminData' });
+                if(!data || !data.requests) {
+                    throw new Error("Invalid data structure from API");
+                }
+                dashboardState = data;
+                renderDashboard();
+            } catch (error) {
+                console.error("Error loading admin data:", error);
+                dom.requestsColumn.innerHTML = `<p style="color: var(--danger);">שגיאת תקשורת בטעינת הנתונים.</p>`;
+                dom.messagesColumn.innerHTML = `<p style="color: var(--danger);">נא לרענן את העמוד.</p>`;
+            }
+        }
+
+        async function apiPost(body) {
+            const response = await fetch(API_URL, { method: 'POST', mode: 'cors', body: JSON.stringify(body), headers: { 'Content-Type': 'text/plain' } });
+            if (!response.ok) throw new Error("Network response was not ok.");
+            return await response.json();
+        }
+
+        function updateClock() {
+            const now = new Date();
+            dom.clock.textContent = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+            dom.date.textContent = now.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+        }
+        
+        function renderDashboard() {
+            renderStats();
+            renderOnlineUsers();
+            renderTasks();
+        }
+        
+        function renderStats() {
+            const { activeClients = 0, overdueClients = 0 } = dashboardState.stats;
+            dom.statsGrid.innerHTML = `
+                <div class="stat-card"><h4>לקוחות פעילים</h4><div class="stat-number">${activeClients}</div></div>
+                <div class="stat-card overdue"><h4>לקוחות בחריגה</h4><div class="stat-number">${overdueClients}</div></div>
+            `;
+        }
+        
+        function renderOnlineUsers() {
+            dom.onlineUsersList.innerHTML = (dashboardState.onlineUsers || []).map(user => `
+                <div class="user-chip">
+                    <img src="${user.avatar || 'https://img.icons8.com/?size=100&id=Ry7mumEprV9w&format=png&color=000000'}" class="user-avatar" alt="${user.name}">
+                    <span>${user.name} (${user.id})</span>
+                    <div class="online-indicator"></div>
+                </div>
+            `).join('');
+        }
+
+        function renderTasks() {
+            const requests = (dashboardState.requests || []).filter(r => r.requestType !== 'הודעת צאט');
+            const messages = (dashboardState.requests || []).filter(r => r.requestType === 'הודעת צאט');
+
+            dom.requestsColumn.innerHTML = requests.length > 0 ? requests.map(createTaskCardHTML).join('') : '<p>אין בקשות חדשות</p>';
+            dom.messagesColumn.innerHTML = messages.length > 0 ? messages.map(createTaskCardHTML).join('') : '<p>אין הודעות חדשות</p>';
+        }
+
+        function createTaskCardHTML(task) {
+            const isMessage = task.requestType === 'הודעת צאט';
+            return `
+                <div class="task-card ${isMessage ? 'type-message' : ''} ${task.status === 'חדש' ? 'new' : 'done'}" data-task-id="${task.id}">
+                    <div class="task-header">
+                        <h5>${task.clientName}</h5>
+                        <small>${new Date(task.timestamp).toLocaleString('he-IL')}</small>
+                    </div>
+                    <p class="task-details"><strong>${task.requestType}:</strong> ${task.details}</p>
+                    <div class="task-actions">
+                        <button class="btn-icon" data-action="share-whatsapp" title="שתף בוואטסאפ">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#25D366"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.79.46 3.48 1.34 4.94l-1.48 5.45 5.59-1.45c1.41.83 3.01 1.28 4.69 1.28h.01c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2m4.63 11.88c-.28.48-.93.84-1.29.89-.35.05-1.07.16-3.02-1.2-1.95-1.37-3.23-3.67-3.23-3.67-.13-.25-.01-.38.11-.51.12-.12.27-.16.38-.16s.23.01.33.1.34.33.51.54.17.21.28.36c.11.16.14.25.04.41-.1.17-.17.28-.33.45-.17.17-.28.27-.38.39-.1.11-.01.25.11.38.16.17.78.96 1.63 1.72.69.62 1.41 1.01 1.58 1.12.17.11.28.1.39-.01s.45-.51.57-.68.23-.17.38-.1c.16.01.96.45 1.13.51.17.06.28.1.31.16s.05.21-.02.33m-.01-7.03c-.27-.5-1.02-.82-1.22-.84-.2-.02-.45-.02-.65.17-.2.18-1.27 1.23-1.27 1.23-.42.42-1.07.65-1.49.54-.42-.12-1.27-.39-2.25-1.12-.98-.74-1.93-2.1-1.93-2.1-.23-.45-.02-.7.2-1.02.21-.32.49-.49.7-.49.12 0 .25.01.38.01.27.02.43.02.6.33.18.31 1.04 1.25 1.04 1.25.17.17.28.23.45.1.17-.13.17-1.11.17-1.11s0-.45-.25-.68c-.25-.23-.55-.25-.7-.25-.16 0-.39 0-.6.04-.21.04-.45.07-.68.13s-.58.18-1.04.7c-.45.51-1.02 1.38-1.02 2.63 0 1.25.75 2.31 1.04 2.63.3.31.62.49.96.6.34.1.68.13 1.04.13.48 0 1.16-.14 1.69-.42.52-.28 1.34-1.02 1.34-1.02.2-.23.42-.42.7-.42.27 0 .52.1.7.42s.33.91.33 1.02c0 .12-.02.25-.07.38s-.23.28-.48.42c-.25.13-.55.23-.81.28-.27.05-.55.07-.81.07-.31 0-.68-.04-1.13-.18s-1.88-.6-3.17-1.85c-1.28-1.25-2.5-3.01-2.5-3.01-.28-.5-.46-1.01-.46-1.55 0-.55.23-1.07.6-1.46.38-.39.84-.68 1.38-.81.54-.13 1.11-.13 1.66 0 .55.13 1.01.42 1.38.81.38.39.6.87.6 1.41z"></path></svg>
+                        </button>
+                        <button class="btn-icon" data-action="toggle-done" title="סמן כבוצע">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${task.status === 'חדש' ? 'currentColor' : 'var(--success)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openWhatsAppModal(taskId) {
+            const task = dashboardState.requests.find(r => r.id == taskId);
+            if (!task) return;
+            
+            const appUrl = "https://saban-94.github.io/App_Sb94/";
+            const message = `שלום ${task.clientName},
+אנו שמחים להודיע על הצטרפותך לשירות הלקוחות הדיגיטלי של ח.סבן! 🥳
+
+באזור האישי החדש שלך תוכל/י:
+✅ לצפות בכל המכולות הפעילות
+✅ לבקש פינוי או החלפה בקליק
+✅ לקבל התראות ועדכונים בזמן אמת
+
+להתחברות והתקנת האפליקציה:
+${appUrl}
+(מספר הלקוח שלך לכניסה: ${task.clientId})
+
+---
+מדריך התקנה מהיר:
+📱 באייפון: לחצ/י על כפתור השיתוף בספארי ובחר/י "הוסף למסך הבית".
+🤖 באנדרואיד: לחצ/י על תפריט 3 הנקודות בכרום ובחר/י "התקן אפליקציה".
+
+נשמח לעמוד לשירותך,
+צוות ח.סבן`;
+
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            
+            dom.modalContainer.innerHTML = `
+                <div class="modal-content">
+                    <h4>שליחת הודעת הצטרפות ללקוח</h4>
+                    <textarea style="width: 100%; height: 250px; margin: 15px 0; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">${message}</textarea>
+                    <a href="${whatsappUrl}" target="_blank" class="btn" style="text-decoration: none; justify-content: center;">פתח ושגר ב-WhatsApp</a>
+                </div>`;
+            dom.modalContainer.classList.add('show');
+        }
+
+        async function toggleTaskStatus(taskId) {
+            const task = dashboardState.requests.find(r => r.id == taskId);
+            if (!task) return;
+            const newStatus = task.status === 'חדש' ? 'בוצע' : 'חדש';
+            try {
+                await apiPost({ action: 'updateRequestStatus', requestId: taskId, status: newStatus });
+                task.status = newStatus; // Update local state
+                renderTasks(); // Re-render to reflect change
+            } catch (error) {
+                console.error("Failed to update task status:", error);
+            }
+        }
+        
+        function setupEventListeners() {
+            document.body.addEventListener('click', e => {
+                const actionElement = e.target.closest('[data-action]');
+                if (!actionElement) {
+                    if (e.target.classList.contains('modal-overlay')) {
+                        dom.modalContainer.classList.remove('show');
+                    }
+                    return;
+                };
+
+                const action = actionElement.dataset.action;
+                const taskCard = actionElement.closest('.task-card');
+                const taskId = taskCard ? taskCard.dataset.taskId : null;
+
+                switch (action) {
+                    case 'share-whatsapp':
+                        openWhatsAppModal(taskId);
+                        break;
+                    case 'toggle-done':
+                        toggleTaskStatus(taskId);
+                        break;
+                }
+            });
+        }
+        
+        initAdminDashboard();
+    });
+    </script>
+</body>
+</html>
+
