@@ -210,11 +210,11 @@
                     setInterval(updateClock, 1000);
                     
                     const storedClientId = localStorage.getItem('saban_client_id');
+                    // FIX for PWA startup issue: Directly check and proceed.
                     if (storedClientId) {
                         dom.splashScreen.classList.add('loading');
                         loadClientData(storedClientId);
                     } else {
-                        // FIX: Hide splash screen before showing login prompt to avoid getting stuck
                         dom.splashScreen.style.display = 'none';
                         promptForClientId();
                     }
