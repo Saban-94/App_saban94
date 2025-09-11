@@ -219,10 +219,10 @@
     document.addEventListener('DOMContentLoaded', () => {
         // --- CONFIGURATION ---
         // REPLACE WITH YOUR GOOGLE SHEET URLS
-        const GID_TRACKING = '0';
-        const GID_REQUESTS = '1126938994'; // Example GID
-        const GID_PRODUCTS = 'SHEET_GID'; // GID for the new products sheet
-        const SHEET_ID = '1C-83hK8k2jeb_GAYA7JNdQ3d9990i-LgtvPSs39Oa4I'; // Your sheet ID
+        const GID_TRACKING = '0'; // 👈 יש לוודא שזה ה-GID הנכון של גליון "מעקב"
+        const GID_REQUESTS = '1126938994'; // 👈 יש לוודא שזה ה-GID הנכון של גליון "בקשות"
+        const GID_PRODUCTS = '804180502'; // GID for the new products sheet
+        const SHEET_ID = '16dq_-3fh2seB1lslJ5R9CNVo5ggs9XEiuz4zTBFtge0'; // Your sheet ID
         
         const trackingSheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_TRACKING}`;
         const requestsSheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_REQUESTS}`;
@@ -528,3 +528,4 @@
     </script>
 </body>
 </html>
+
