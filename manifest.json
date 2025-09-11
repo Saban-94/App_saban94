@@ -1,0 +1,23 @@
+{
+  "name": "מערכת ח.סבן",
+  "short_name": "ח.סבן",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b72b9",
+  "description": "אזור אישי וניהול הזמנות עבור לקוחות ח.סבן.",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/2SbDgD1B/1.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.postimg.cc/2SbDgD1B/1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
