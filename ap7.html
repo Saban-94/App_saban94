@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>אזור אישי - ח.סבן (משודרג)</title>
+    
+    <!-- Favicon Emoji -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
+    
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS for modern UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet Maps Library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide-react@0.292.0/dist/lucide-react.js"></script>
+    <script src="https://unpkg.com/lucide-react/dist/umd/lucide-react.min.js"></script>
+
+
+    <style>
+        :root {
+            --primary-color: #0d47a1; /* Deep Blue */
+            --secondary-color: #1565c0; /* Lighter Blue */
+            --accent-color: #ffab00; /* Amber */
+            --background-color: #f1f5f9; /* Slate 100 */
+            --text-color: #1e293b; /* Slate 800 */
+            --card-background: #ffffff;
+        }
+
+        body {
+            font-family: 'Rubik', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .app-shell {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-bottom: 80px; /* Space for nav bar */
+        }
+        
+        .nav-bar {
+            border-top: 1px solid #e2e8f0;
+            background-color: var(--card-background);
+        }
+
+        .nav-button.active {
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            font-weight: 700;
+        }
+        .nav-button.active svg {
+             stroke: var(--primary-color);
+        }
+
+        /* Page transition */
+        .page {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom scrollbar */
+        .main-content::-webkit-scrollbar { width: 5px; }
+        .main-content::-webkit-scrollbar-track { background: #f1f1f1; }
+        .main-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 5px; }
+        .main-content::-webkit-scrollbar-thumb:hover { background: #aaa; }
+        
+        .toast-container {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        .toast {
+            background-color: rgba(20, 20, 20, 0.85);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 9999px;
+            font-size: 14px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease-in-out;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="overscroll-none">
+
+    <div class="app-shell">
+        <!-- Header -->
+        <header class="bg-white shadow-md p-4 flex items-center justify-between sticky top-0 z-10">
+            <h1 class="text-xl font-bold text-[--primary-color]">אזור אישי ח.סבן</h1>
+            <div>
+                 <!-- Could be a profile icon or settings -->
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content p-4">
+            
+            <!-- PAGE 1: Containers Management -->
+            <div id="page-containers" class="page active">
+                <h2 class="text-2xl font-bold mb-4">ניהול מכולות</h2>
+
+                <!-- Dashboard Stats -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+                        <h3 class="text-gray-500 text-sm">מכולות פעילות</h3>
+                        <p id="active-containers-stat" class="text-3xl font-bold text-[--primary-color]">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+                        <h3 class="text-gray-500 text-sm">בקשות חדשות</h3>
+                        <p id="new-requests-stat" class="text-2xl font-bold text-gray-700">0</p>
+                    </div>
+                </div>
+
+                <!-- Container List -->
+                <div id="container-list" class="space-y-4">
+                    <!-- Dynamic content will be injected here -->
+                    <div class="text-center p-8">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+                        <p class="mt-4 text-gray-600">טוען נתונים...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 2: Building Materials -->
+            <div id="page-materials" class="page">
+                <h2 class="text-2xl font-bold mb-2">חומרי בניין</h2>
+                <p class="text-gray-500 mb-4">בחר מוצרים מהקטלוג והוסף לסל להזמנה מהירה</p>
+
+                <!-- Search and Filter -->
+                <div class="mb-4 sticky top-0 bg-[--background-color] py-2">
+                    <input id="product-search" type="text" placeholder="🔍 חפש מוצר או מק״ט..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[--primary-color] outline-none transition">
+                </div>
+                
+                <div id="product-list" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <!-- Product cards will be injected here -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Floating Action Button for Cart -->
+        <button id="cart-button" class="hidden fixed bottom-24 right-6 bg-[--accent-color] text-black w-16 h-16 rounded-full shadow-lg flex items-center justify-center z-20 transform transition-transform hover:scale-110">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span id="cart-count" class="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold">0</span>
+        </button>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="nav-bar fixed bottom-0 w-full max-w-screen-sm mx-auto left-0 right-0 h-20 grid grid-cols-2 items-center text-center text-gray-500 z-30">
+            <button id="nav-containers" class="nav-button active flex flex-col items-center justify-center h-full transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span class="text-xs mt-1">מכולות</span>
+            </button>
+            <button id="nav-materials" class="nav-button flex flex-col items-center justify-center h-full transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+                <span class="text-xs mt-1">חומרי בניין</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modal for Cart / Order -->
+    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold">סל הזמנות</h3>
+                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <div id="cart-items" class="p-4 overflow-y-auto">
+                <!-- Cart items will be here -->
+            </div>
+            <div class="p-4 border-t mt-auto">
+                 <textarea id="order-notes" class="w-full p-2 border rounded-md mb-4" placeholder="הערות להזמנה... (אופציונלי)"></textarea>
+                 <button id="submit-order-btn" class="w-full bg-[--primary-color] text-white font-bold py-3 rounded-lg hover:bg-[--secondary-color] transition-all flex items-center justify-center">
+                    <span id="submit-btn-text">שליחת הזמנה</span>
+                    <div id="submit-spinner" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white ml-2 hidden"></div>
+                 </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- CONFIGURATION ---
+        // REPLACE WITH YOUR GOOGLE SHEET URLS
+        const GID_TRACKING = '0';
+        const GID_REQUESTS = '1126938994'; // Example GID
+        const GID_PRODUCTS = 'SHEET_GID'; // GID for the new products sheet
+        const SHEET_ID = '1C-83hK8k2jeb_GAYA7JNdQ3d9990i-LgtvPSs39Oa4I'; // Your sheet ID
+        
+        const trackingSheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_TRACKING}`;
+        const requestsSheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_REQUESTS}`;
+        const productsSheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_PRODUCTS}`;
+        const postUrl = `https://script.google.com/macros/s/AKfycbwPzN3_iIsJd-1V-o_5f2tUf_gX-q6M79FpWp5lJq9lJ9jJjQ8Z/exec`;
+
+        // --- STATE MANAGEMENT ---
+        let state = {
+            containers: [],
+            requests: [],
+            products: [],
+            cart: [],
+            activePage: 'containers',
+            customerNumber: null,
+            customerName: null,
+        };
+        
+        // --- DOM ELEMENTS ---
+        const dom = {
+            pages: {
+                containers: document.getElementById('page-containers'),
+                materials: document.getElementById('page-materials'),
+            },
+            navButtons: {
+                containers: document.getElementById('nav-containers'),
+                materials: document.getElementById('nav-materials'),
+            },
+            containerList: document.getElementById('container-list'),
+            productList: document.getElementById('product-list'),
+            productSearch: document.getElementById('product-search'),
+            stats: {
+                activeContainers: document.getElementById('active-containers-stat'),
+                newRequests: document.getElementById('new-requests-stat'),
+            },
+            cart: {
+                button: document.getElementById('cart-button'),
+                count: document.getElementById('cart-count'),
+                modal: document.getElementById('cart-modal'),
+                itemsContainer: document.getElementById('cart-items'),
+                closeBtn: document.getElementById('close-modal-btn'),
+                submitBtn: document.getElementById('submit-order-btn'),
+                submitBtnText: document.getElementById('submit-btn-text'),
+                submitSpinner: document.getElementById('submit-spinner'),
+                notes: document.getElementById('order-notes'),
+            },
+            toastContainer: document.getElementById('toast-container'),
+        };
+
+        // --- INITIALIZATION ---
+        const initApp = async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            state.customerNumber = urlParams.get('id');
+            if (!state.customerNumber) {
+                dom.containerList.innerHTML = `<p class="text-center text-red-500">שגיאה: מספר לקוח לא זוהה.</p>`;
+                return;
+            }
+            
+            setupEventListeners();
+            showPage(state.activePage);
+            
+            // Fetch all data in parallel
+            await Promise.all([
+                fetchData(trackingSheetUrl, 'containers'),
+                fetchData(requestsSheetUrl, 'requests'),
+                fetchData(productsSheetUrl, 'products')
+            ]);
+            
+            renderContainers();
+            renderProducts();
+            updateStats();
+        };
+
+        // --- DATA FETCHING & PARSING ---
+        const fetchData = async (url, type) => {
+            try {
+                const response = await fetch(url);
+                const csvText = await response.text();
+                const data = parseCSV(csvText);
+                state[type] = data;
+            } catch (error) {
+                console.error(`Error fetching ${type}:`, error);
+                showToast(`שגיאה בטעינת נתוני ${type}`, 'error');
+            }
+        };
+
+        const parseCSV = (csvText) => {
+            const rows = csvText.split(/\r?\n/);
+            const headers = rows[0].split(',');
+            return rows.slice(1).map(rowStr => {
+                const row = rowStr.split(',');
+                if(row.length < headers.length) return null; // handle empty/malformed rows
+                const obj = {};
+                headers.forEach((header, i) => obj[header.trim()] = row[i]?.trim());
+                return obj;
+            }).filter(Boolean); // Filter out nulls
+        };
+
+        // --- NAVIGATION & UI ---
+        const showPage = (pageId) => {
+            state.activePage = pageId;
+            Object.values(dom.pages).forEach(p => p.classList.remove('active'));
+            Object.values(dom.navButtons).forEach(b => b.classList.remove('active'));
+            
+            dom.pages[pageId].classList.add('active');
+            dom.navButtons[pageId].classList.add('active');
+            
+            dom.cart.button.classList.toggle('hidden', pageId !== 'materials');
+        };
+        
+        const showToast = (message, type = 'info') => {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            dom.toastContainer.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 100); // Animate in
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 3000);
+        };
+        
+        // --- EVENT LISTENERS ---
+        const setupEventListeners = () => {
+            dom.navButtons.containers.onclick = () => showPage('containers');
+            dom.navButtons.materials.onclick = () => showPage('materials');
+            dom.productSearch.oninput = () => renderProducts(dom.productSearch.value);
+            dom.cart.button.onclick = () => dom.cart.modal.classList.remove('hidden');
+            dom.cart.closeBtn.onclick = () => dom.cart.modal.classList.add('hidden');
+            dom.cart.submitBtn.onclick = submitMaterialOrder;
+        };
+
+        // --- RENDERING ---
+        const renderContainers = () => {
+            const customerContainers = state.containers.filter(c => c['מספר לקוח'] === state.customerNumber);
+            if (customerContainers.length === 0) {
+                dom.containerList.innerHTML = `<p class="text-center text-gray-500">לא נמצאו מכולות פעילות עבורך.</p>`;
+                return;
+            }
+            
+            state.customerName = customerContainers[0]['שם לקוח'];
+            
+            const html = customerContainers.map(c => `
+                <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 ${c['סטטוס'] === 'סגור' ? 'border-gray-400' : 'border-green-500'}">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold text-lg">${c['כתובת']}</p>
+                            <p class="text-sm text-gray-500">תעודה: ${c['תעודה']}</p>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-1 rounded-full ${c['סטטוס'] === 'סגור' ? 'bg-gray-200 text-gray-700' : 'bg-green-100 text-green-700'}">${c['סטטוס']}</span>
+                    </div>
+                     <div class="text-sm text-gray-600 grid grid-cols-2 gap-2 mt-4">
+                        <p><strong>סוג פעולה:</strong> ${c['סוג פעולה']}</p>
+                        <p><strong>ימים באתר:</strong> ${c['ימים שעברו'] || 'N/A'}</p>
+                        <p><strong>תאריך הזמנה:</strong> ${c['תאריך הזמנה']}</p>
+                        <p><strong>סיום צפוי:</strong> ${c['תאריך סיום צפוי'] || 'N/A'}</p>
+                    </div>
+                </div>
+            `).join('');
+            dom.containerList.innerHTML = html;
+        };
+        
+        const renderProducts = (searchTerm = '') => {
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            const filteredProducts = state.products.filter(p => 
+                p['שם מוצר']?.toLowerCase().includes(lowerSearchTerm) ||
+                p['מק"ט']?.toLowerCase().includes(lowerSearchTerm)
+            );
+
+            if (filteredProducts.length === 0 && state.products.length > 0) {
+                 dom.productList.innerHTML = `<p class="col-span-full text-center text-gray-500">לא נמצאו מוצרים תואמים.</p>`;
+                 return;
+            }
+             if (state.products.length === 0) {
+                 dom.productList.innerHTML = `<p class="col-span-full text-center text-gray-500">טוען קטלוג מוצרים...</p>`;
+                 return;
+            }
+
+            const html = filteredProducts.map(p => `
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
+                    <img src="${p['תמונת מוצר'] || 'https://placehold.co/300x200/e2e8f0/adb5bd?text=אין+תמונה'}" alt="${p['שם מוצר']}" class="w-full h-24 object-cover">
+                    <div class="p-3 flex flex-col flex-grow">
+                        <h4 class="font-bold text-sm">${p['שם מוצר']}</h4>
+                        <p class="text-xs text-gray-500 mb-2">מק"ט: ${p['מק"ט']}</p>
+                        <p class="text-xs text-gray-600 flex-grow">${p['מפרט טכני'] || ''}</p>
+                        <button onclick="addToCart('${p['מק"ט"]}')" class="mt-3 w-full bg-blue-50 text-[--primary-color] text-sm font-bold py-2 rounded-lg hover:bg-blue-100 transition-all">הוספה לסל</button>
+                    </div>
+                </div>
+            `).join('');
+            dom.productList.innerHTML = html;
+        };
+        
+        const updateStats = () => {
+             const customerContainers = state.containers.filter(c => c['מספר לקוח'] === state.customerNumber);
+             const activeContainers = customerContainers.filter(c => c['סטטוס'] !== 'סגור').length;
+             dom.stats.activeContainers.textContent = activeContainers;
+
+             const newRequests = state.requests.filter(r => r['מספר לקוח'] === state.customerNumber && r['סטטוס טיפול'] === 'חדש').length;
+             dom.stats.newRequests.textContent = newRequests;
+        };
+
+        // --- CART LOGIC ---
+        window.addToCart = (productId) => {
+            const product = state.products.find(p => p['מק"ט'] === productId);
+            if (!product) return;
+
+            const cartItem = state.cart.find(item => item.id === productId);
+            if (cartItem) {
+                cartItem.quantity++;
+            } else {
+                state.cart.push({ id: productId, name: product['שם מוצר'], quantity: 1 });
+            }
+            updateCartUI();
+            showToast(`${product['שם מוצר']} נוסף לסל!`);
+        };
+
+        const updateCartUI = () => {
+            const totalItems = state.cart.reduce((sum, item) => sum + item.quantity, 0);
+            dom.cart.count.textContent = totalItems;
+            
+            if (state.cart.length === 0) {
+                dom.cart.itemsContainer.innerHTML = `<p class="text-center text-gray-500">הסל שלך ריק.</p>`;
+            } else {
+                const itemsHtml = state.cart.map(item => `
+                    <div class="flex items-center justify-between py-2 border-b">
+                        <div>
+                            <p class="font-semibold">${item.name}</p>
+                            <p class="text-sm text-gray-500">מק"ט: ${item.id}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="updateQuantity('${item.id}', -1)" class="w-7 h-7 bg-gray-200 rounded-full">-</button>
+                            <span>${item.quantity}</span>
+                            <button onclick="updateQuantity('${item.id}', 1)" class="w-7 h-7 bg-gray-200 rounded-full">+</button>
+                        </div>
+                    </div>
+                `).join('');
+                dom.cart.itemsContainer.innerHTML = itemsHtml;
+            }
+        };
+
+        window.updateQuantity = (productId, change) => {
+            const cartItem = state.cart.find(item => item.id === productId);
+            if (!cartItem) return;
+            
+            cartItem.quantity += change;
+            if (cartItem.quantity <= 0) {
+                state.cart = state.cart.filter(item => item.id !== productId);
+            }
+            updateCartUI();
+        };
+
+        const submitMaterialOrder = async () => {
+            if (state.cart.length === 0) {
+                showToast('הסל ריק, לא ניתן לשלוח הזמנה.', 'error');
+                return;
+            }
+
+            setSubmitButtonLoading(true);
+
+            // 🚚🧱
+            const orderDetails = state.cart.map(item => `• ${item.name} (מק"ט: ${item.id}) - כמות: ${item.quantity}`).join('\n');
+            const notes = dom.cart.notes.value ? `\nהערות: ${dom.cart.notes.value}` : '';
+            const formattedOrder = `הזמנת חומרי בניין חדשה:\n${orderDetails}${notes}`;
+
+            const dataToSend = {
+                timestamp: new Date().toISOString(),
+                'מספר לקוח': state.customerNumber,
+                'שם לקוח': state.customerName || 'לא ידוע',
+                'סוג הבקשה': 'הזמנת חומרי בניין',
+                'פרטים': formattedOrder,
+                'סטטוס טיפול': 'חדש'
+            };
+
+            try {
+                const response = await fetch(postUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // Important for this type of google script endpoint
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSend)
+                });
+                // Since it's no-cors, we can't read the response, but we assume success
+                showToast('ההזמנה נשלחה בהצלחה!', 'success');
+                state.cart = [];
+                dom.cart.notes.value = '';
+                updateCartUI();
+                dom.cart.modal.classList.add('hidden');
+            } catch (error) {
+                console.error("Order submission error:", error);
+                showToast('שגיאה בשליחת ההזמנה.', 'error');
+            } finally {
+                setSubmitButtonLoading(false);
+            }
+        };
+        
+        const setSubmitButtonLoading = (isLoading) => {
+            dom.cart.submitBtn.disabled = isLoading;
+            dom.cart.submitBtnText.classList.toggle('hidden', isLoading);
+            dom.cart.submitSpinner.classList.toggle('hidden', !isLoading);
+        };
+
+        // --- START ---
+        initApp();
+    });
+    </script>
+</body>
+</html>
